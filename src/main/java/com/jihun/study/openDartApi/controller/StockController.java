@@ -1,8 +1,6 @@
 package com.jihun.study.openDartApi.controller;
 
 import com.jihun.study.openDartApi.dto.DartDto;
-import com.jihun.study.openDartApi.entity.stock.CorpDetail;
-import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.service.CountService;
 import com.jihun.study.openDartApi.service.StockService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api")
 public class StockController {
     private StockService stockService;

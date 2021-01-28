@@ -19,7 +19,7 @@ public class DartCountService implements CountService {
     private Logger logger = LoggerFactory.getLogger("DartCountService");
 
     private static final int MAX_REQ_PER_DAY = 10000;
-    private static final int MAX_REQ_PER_MIN = 1000;
+    private static final int MAX_REQ_PER_MIN = 500;
 
     public static final int REQ_OVER_DAY    = 1;
     public static final int REQ_OVER_MIN    = 2;
@@ -53,8 +53,11 @@ public class DartCountService implements CountService {
             countInMin = requestCount.get().getCount();
         }
 
-        logger.debug("isCountOver : countInDay = " + countInDay);
-        logger.debug("isCountOver : countInMin = " + countInMin);
+//        logger.debug("isCountOver : countInDay = " + countInDay);
+//        logger.debug("isCountOver : countInMin = " + countInMin);
+
+        System.out.println("isCountOver : countInDay = " + countInDay);
+        System.out.println("isCountOver : countInMin = " + countInMin);
 
         return countInDay + countInMin >= MAX_REQ_PER_DAY ? REQ_OVER_DAY : countInMin >= MAX_REQ_PER_MIN ? REQ_OVER_MIN : REQ_OK;
     }

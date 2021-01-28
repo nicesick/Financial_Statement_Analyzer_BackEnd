@@ -14,10 +14,15 @@ public class CorpUpdate implements Serializable, DartDto {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int     id;
-    private boolean isSuccess;
+    private String  progress;
     private Date    updateDate;
 
     public CorpUpdate() {
+    }
+
+    public CorpUpdate(String progress, Date updateDate) {
+        this.progress = progress;
+        this.updateDate = updateDate;
     }
 
     public Date getUpdateDate() {
@@ -28,11 +33,11 @@ public class CorpUpdate implements Serializable, DartDto {
         this.updateDate = updateDate;
     }
 
-    public boolean isSuccess() {
-        return isSuccess;
+    public String getProgress() {
+        return progress;
     }
 
-    public void setSuccess(boolean success) {
-        isSuccess = success;
+    public void setProgress(String progress) {
+        this.progress = progress;
     }
 }

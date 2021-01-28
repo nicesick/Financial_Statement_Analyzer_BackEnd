@@ -135,7 +135,7 @@ public class DartStockService implements StockService {
 
     @Override
     public ResponseEntity<DartDto> getUpdate() {
-        Optional<CorpUpdate> corpUpdate = corpUpdateRepository.findTopByIsSuccessOrderByIdDesc(true);
+        Optional<CorpUpdate> corpUpdate = corpUpdateRepository.findTopByProgressNotOrderByIdDesc("failed");
 
         if (corpUpdate.isPresent()) {
             return new ResponseEntity(corpUpdate.get(), HttpStatus.OK);
@@ -147,29 +147,41 @@ public class DartStockService implements StockService {
     @Transactional
     @Override
     public ResponseEntity<DartDto> update() {
+        Optional<CorpUpdate> beforeStartCheckCorpUpdate = corpUpdateRepository.findTopByOrderByIdDesc();
+
+        if (beforeStartCheckCorpUpdate.isPresent()) {
+            CorpUpdate corpUpdate = beforeStartCheckCorpUpdate.get();
+            if("updating".equals(corpUpdate.getProgress())) {
+                return new ResponseEntity(corpUpdate, HttpStatus.OK);
+            }
+        } else {
+            CorpUpdate newCorpUpdate = new CorpUpdate("updating", new Date());
+            corpUpdateRepository.save(newCorpUpdate);
+        }
+
         List<Map<String, String>>       corpKeys    = null;
         List<Corporation>               corpInfos   = null;
         Map<String, List<CorpDetail>>   corpDetails = null;
 
-        /**
-         * For Testing
-         */
-        List<Map<String, String>>   corpKeysForTest     = new ArrayList<>();
-        String[]                    corpKeysSample      = {"01345812", "00366997", "00126380"
-                                                        , "00258999", "00252074", "00689418"
-                                                        , "01135941", "00347716"};
+//        /**
+//         * For Testing
+//         */
+//        List<Map<String, String>>   corpKeysForTest     = new ArrayList<>();
+//        String[]                    corpKeysSample      = {"01345812", "00366997", "00126380"
+//                                                        , "00258999", "00252074", "00689418"
+//                                                        , "01135941", "00347716"};
+//
+//        for (String corpKeySample : corpKeysSample) {
+//            Map<String, String> corpKeysForTestMap = new HashMap<>();
+//            corpKeysForTestMap.put("corp_code", corpKeySample);
+//
+//            corpKeysForTest.add(corpKeysForTestMap);
+//        }
 
-        for (String corpKeySample : corpKeysSample) {
-            Map<String, String> corpKeysForTestMap = new HashMap<>();
-            corpKeysForTestMap.put("corp_code", corpKeySample);
-
-            corpKeysForTest.add(corpKeysForTestMap);
-        }
-
-        boolean isSuccess = false;
+        String progress = "failed";
         try {
-//            corpKeys    = getCorpKeys();
-            corpKeys    = corpKeysForTest;
+            corpKeys    = getCorpKeys();
+//            corpKeys    = corpKeysForTest;
             corpInfos   = getCorpInfos(corpKeys);
             corpDetails = getCorpDetails(corpInfos);
 
@@ -177,17 +189,24 @@ public class DartStockService implements StockService {
             saveCorporation(corpInfos);
 
             logger.info("update successfully processed");
-            isSuccess = true;
+            progress = "success";
         } catch (Exception e) {
             logger.error("update failed");
             e.printStackTrace();
         } finally {
-            CorpUpdate corpUpdate = new CorpUpdate();
-            corpUpdate.setSuccess(isSuccess);
-            corpUpdate.setUpdateDate(new Date());
+            Optional<CorpUpdate> afterUpdateSaveCorpUpdate = corpUpdateRepository.findTopByOrderByIdDesc();
 
-            corpUpdateRepository.save(corpUpdate);
-            return new ResponseEntity<>(corpUpdate, HttpStatus.OK);
+            if (afterUpdateSaveCorpUpdate.isPresent()) {
+                CorpUpdate corpUpdate = afterUpdateSaveCorpUpdate.get();
+
+                corpUpdate.setProgress(progress);
+                corpUpdate.setUpdateDate(new Date());
+
+                corpUpdateRepository.save(corpUpdate);
+                return new ResponseEntity<>(corpUpdate, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         }
     }
 
