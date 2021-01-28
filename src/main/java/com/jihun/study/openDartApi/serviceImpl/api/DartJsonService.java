@@ -50,11 +50,11 @@ public class DartJsonService implements ApiService<DartApiDto> {
 
         if (countOverFlag == DartCountService.REQ_OVER_DAY) {
             throw new LimitExceededException();
-        } else if (countOverFlag == DartCountService.REQ_OVER_MIN) {
-            Thread.sleep(60000);
         }
+//        else if (countOverFlag == DartCountService.REQ_OVER_MIN) {
+//            Thread.sleep(60000);
+//        }
 
-        Thread.sleep(5000);
         countService.addCount(LocalDate.now(), LocalTime.now().withSecond(0));
         return restTemplate.exchange(url, httpMethod, new HttpEntity<>(body, httpHeaders), clazz);
     }

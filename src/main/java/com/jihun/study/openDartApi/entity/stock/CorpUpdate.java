@@ -15,6 +15,13 @@ public class CorpUpdate implements Serializable, DartDto {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int     id;
     private String  progress;
+    /**
+     * updateDate
+     * 
+     * updating : 서버에서 업데이트 중 
+     * success  : 완료
+     * failed   : 실패
+     */
     private Date    updateDate;
 
     public CorpUpdate() {

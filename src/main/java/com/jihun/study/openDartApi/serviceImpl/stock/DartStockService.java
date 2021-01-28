@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.naming.LimitExceededException;
@@ -34,6 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class DartStockService implements StockService {
@@ -144,7 +146,6 @@ public class DartStockService implements StockService {
         }
     }
 
-    @Transactional
     @Override
     public ResponseEntity<DartDto> update() {
         Optional<CorpUpdate> beforeStartCheckCorpUpdate = corpUpdateRepository.findTopByOrderByIdDesc();
@@ -154,44 +155,16 @@ public class DartStockService implements StockService {
             if("updating".equals(corpUpdate.getProgress())) {
                 return new ResponseEntity(corpUpdate, HttpStatus.OK);
             }
-        } else {
-            CorpUpdate newCorpUpdate = new CorpUpdate("updating", new Date());
-            corpUpdateRepository.save(newCorpUpdate);
         }
+        CorpUpdate newCorpUpdate = new CorpUpdate("updating", new Date());
+        corpUpdateRepository.save(newCorpUpdate);
 
-        List<Map<String, String>>       corpKeys    = null;
-        List<Corporation>               corpInfos   = null;
-        Map<String, List<CorpDetail>>   corpDetails = null;
-
-//        /**
-//         * For Testing
-//         */
-//        List<Map<String, String>>   corpKeysForTest     = new ArrayList<>();
-//        String[]                    corpKeysSample      = {"01345812", "00366997", "00126380"
-//                                                        , "00258999", "00252074", "00689418"
-//                                                        , "01135941", "00347716"};
-//
-//        for (String corpKeySample : corpKeysSample) {
-//            Map<String, String> corpKeysForTestMap = new HashMap<>();
-//            corpKeysForTestMap.put("corp_code", corpKeySample);
-//
-//            corpKeysForTest.add(corpKeysForTestMap);
-//        }
-
-        String progress = "failed";
+        String progress = "success";
         try {
-            corpKeys    = getCorpKeys();
-//            corpKeys    = corpKeysForTest;
-            corpInfos   = getCorpInfos(corpKeys);
-            corpDetails = getCorpDetails(corpInfos);
-
-            evalCorporation(corpInfos, corpDetails);
-            saveCorporation(corpInfos);
-
-            logger.info("update successfully processed");
-            progress = "success";
+//            Thread.sleep(60000);
+            progressUpdating();
         } catch (Exception e) {
-            logger.error("update failed");
+            progress = "failed";
             e.printStackTrace();
         } finally {
             Optional<CorpUpdate> afterUpdateSaveCorpUpdate = corpUpdateRepository.findTopByOrderByIdDesc();
@@ -210,6 +183,108 @@ public class DartStockService implements StockService {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void progressUpdating() throws LimitExceededException, InterruptedException, IOException, IllegalAccessException, InvocationTargetException, JDOMException, NoSuchMethodException {
+        List<Map<String, String>>       corpKeys    = null;
+        List<Corporation>               corpInfos   = null;
+        Map<String, List<CorpDetail>>   corpDetails = null;
+
+//        /**
+//         * Testing Code
+//         *
+//         * 삼성전자 - 00126380
+//         * 셀트리온 - 00421045
+//         * HMM - 00164645
+//         * 박셀바이오 - 01335851
+//         * 현대차증권 - 00137997
+//         * LG전자 - 00401731
+//         * 셀리버리 - 01182444
+//         * 셀트리온헬스케어 - 00554024
+//         * 기아자동차 - 00106641
+//         * SK하이닉스 - 00164779
+//         * NAVER - 00266961
+//         * 삼성바이오로직스 - 00877059
+//         * 삼성SDI - 00126362
+//         * 카카오 - 00918444
+//         * 현대모비스 - 00164788
+//         * SK이노베이션 - 00631518
+//         * 삼성물산 - 00149655
+//         * LG생활건강 - 00356370
+//         * 엔씨소프트 - 00261443
+//         * SK텔레콤 - 00159023
+//         * LG디스플레이 - 00105873
+//         * KB금융 - 00688996
+//         * 신한지주 - 00382199
+//         * 삼성에스디에스 - 00126186
+//         * 삼성전기 - 00126371
+//         * 한국전력공사 - 00159193
+//         * 아모레퍼시픽 - 00583424
+//         * 넷마블 - 00441854
+//         * 케이티앤지 - 00244455
+//         * 하나금융지주 - 00547583
+//         * 한온시스템 - 00161125
+//         * 포스코케미칼 - 00155276
+//         * 금호석유화학 - 00106368
+//         */
+//        List<Map<String, String>>   corpKeysForTest     = new ArrayList<>();
+//        String[]                    corpKeysSample      = {
+//                 "00126380"
+//                ,"00421045"
+//                ,"00164645"
+//                ,"01335851"
+//                ,"00137997"
+//                ,"00401731"
+//                ,"01182444"
+//                ,"00554024"
+//                ,"00106641"
+//                ,"00164779"
+//                ,"00266961"
+//                ,"00877059"
+//                ,"00126362"
+//                ,"00918444"
+//                ,"00164788"
+//                ,"00631518"
+//                ,"00149655"
+//                ,"00356370"
+//                ,"00261443"
+//                ,"00159023"
+//                ,"00105873"
+//                ,"00688996"
+//                ,"00382199"
+//                ,"00126186"
+//                ,"00126371"
+//                ,"00159193"
+//                ,"00583424"
+//                ,"00441854"
+//                ,"00244455"
+//                ,"00547583"
+//                ,"00161125"
+//                ,"00155276"
+//                ,"00106368"};
+//
+//        for (String corpKeySample : corpKeysSample) {
+//            Map<String, String> corpKeysForTestMap = new HashMap<>();
+//            corpKeysForTestMap.put("corp_code", corpKeySample);
+//
+//            corpKeysForTest.add(corpKeysForTestMap);
+//        }
+
+        try {
+            corpKeys    = getCorpKeys();
+//            corpKeys    = corpKeysForTest;
+            corpInfos   = getCorpInfos(corpKeys);
+            corpDetails = getCorpDetails(corpInfos);
+
+            corpInfos   = evalCorporation(corpInfos, corpDetails);
+            saveCorporation(corpInfos);
+
+            logger.info("update successfully processed");
+        } catch (Exception exception) {
+            logger.error("update failed");
+            throw exception;
+        }
+    }
+
     /**
      * saveCorporation
      *
@@ -218,6 +293,8 @@ public class DartStockService implements StockService {
      * @param corpInfos
      */
     private void saveCorporation(List<Corporation> corpInfos) {
+        corporationRepository.deleteAll();
+
         for (Corporation corpInfo : corpInfos) {
             logger.debug("saveCorporation : " + corpInfo.toString());
             corporationRepository.save(corpInfo);
@@ -232,19 +309,22 @@ public class DartStockService implements StockService {
      * 평가한 결과는 Corporation Entity 에 저장됩니다.
      * 만약 평가할 수 없다면, Corportation Entity 의 Stat_eval_done 변수가 false 로 변경됩니다.
      *
-     * @param corpInfos
+     * @param oldCorpInfos
      * @param corpDetails
      */
-    private void evalCorporation(List<Corporation> corpInfos, final Map<String, List<CorpDetail>> corpDetails) {
+    private List<Corporation> evalCorporation(final List<Corporation> oldCorpInfos, final Map<String, List<CorpDetail>> corpDetails) {
+        final String NUMBER_MATCH_EXPRESSION = "[+-]?\\d*(\\.\\d+)?";
+        List<Corporation> corpInfos = new CopyOnWriteArrayList<>(oldCorpInfos);
+
         for (Corporation corpInfo : corpInfos) {
             List<CorpDetail> targetCorpDetails = corpDetails.getOrDefault(corpInfo.getCorpCode(), null);
 
             if (targetCorpDetails == null) {
                 corpInfos.remove(corpInfo);
                 continue;
+            } else {
+                corpInfo.addCorpDetails(targetCorpDetails);
             }
-
-            corpInfo.addCorpDetails(targetCorpDetails);
 
             String[] revenues           = new String[targetCorpDetails.size()];
             String[] tot_equities       = new String[targetCorpDetails.size()];
@@ -271,14 +351,19 @@ public class DartStockService implements StockService {
             }
 
             if (corpInfo.isEvalDone()) {
-                corpInfo.setRevenueLack(CorpEvaluator.isRevenueLack(corpInfo.getCorpCode(), corpInfo.getCorpCls(), revenues));
-                corpInfo.setEquityImpairment(CorpEvaluator.isEquityImpairment(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, equities));
-                corpInfo.setOperatingLoss(CorpEvaluator.isOperatingLoss(corpInfo.getCorpCode(), corpInfo.getCorpCls(), operatingIncomes));
-                corpInfo.setLossBeforeTax(CorpEvaluator.isLossBeforeTax(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, incomeBeforeTexes));
+                try {
+                    corpInfo.setRevenueLack(CorpEvaluator.isRevenueLack(corpInfo.getCorpCode(), corpInfo.getCorpCls(), revenues));
+                    corpInfo.setEquityImpairment(CorpEvaluator.isEquityImpairment(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, equities));
+                    corpInfo.setOperatingLoss(CorpEvaluator.isOperatingLoss(corpInfo.getCorpCode(), corpInfo.getCorpCls(), operatingIncomes));
+                    corpInfo.setLossBeforeTax(CorpEvaluator.isLossBeforeTax(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, incomeBeforeTexes));
+                } catch (NumberFormatException e) {
+                    corpInfo.setEvalDone(false);
+                }
             }
         }
 
         logger.debug("evalCorporation : corpInfos = " + corpInfos.toString());
+        return corpInfos;
     }
 
     /**

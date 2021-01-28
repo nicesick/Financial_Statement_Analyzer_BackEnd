@@ -38,17 +38,21 @@ public class CorpEvaluator {
         boolean revenueLack = false;
 
         for (String revenue : revenues) {
-            long longRevenue = Long.parseLong(revenue.replaceAll("\\,", ""));
-            logger.debug("isRevenueLack : revenue           = " + longRevenue);
+            try {
+                long longRevenue = Long.parseLong(revenue.replaceAll("\\,", ""));
+                logger.debug("isRevenueLack : revenue           = " + longRevenue);
 
-            if (corpCls == KOSPI && (KOSPI_REVENUE_STANDARD > longRevenue)) {
-                revenueLack = true;
-                break;
-            }
+                if (corpCls == KOSPI && (KOSPI_REVENUE_STANDARD > longRevenue)) {
+                    revenueLack = true;
+                    break;
+                }
 
-            if (corpCls == KOSDAQ && (KOSDAQ_REVENUE_STANDARD > longRevenue)) {
-                revenueLack = true;
-                break;
+                if (corpCls == KOSDAQ && (KOSDAQ_REVENUE_STANDARD > longRevenue)) {
+                    revenueLack = true;
+                    break;
+                }
+            } catch(NumberFormatException e) {
+                throw e;
             }
         }
 
@@ -75,20 +79,24 @@ public class CorpEvaluator {
         }
 
         for (int index = 0; index < totEquities.length; index++) {
-            long    totEquity           = Long.parseLong(totEquities[index].replaceAll("\\,", ""));
-            long    equity              = Long.parseLong(equities[index].replaceAll("\\,", ""));
-            int     impairmentRatio     = (int) (((float)(totEquity - equity) / (totEquity)) * 100);
+            try {
+                long    totEquity           = Long.parseLong(totEquities[index].replaceAll("\\,", ""));
+                long    equity              = Long.parseLong(equities[index].replaceAll("\\,", ""));
+                int     impairmentRatio     = (int) (((float)(totEquity - equity) / (totEquity)) * 100);
 
-            logger.debug("isEquityImpairment : totEquity        = " + totEquity);
-            logger.debug("isEquityImpairment : equity           = " + equity);
-            logger.debug("isEquityImpairment : impairmentRatio  = " + impairmentRatio);
+                logger.debug("isEquityImpairment : totEquity        = " + totEquity);
+                logger.debug("isEquityImpairment : equity           = " + equity);
+                logger.debug("isEquityImpairment : impairmentRatio  = " + impairmentRatio);
 
-            if (corpCls == KOSPI && (KOSPI_EQUITY_IMPAIRMENT_STANDARD > impairmentRatio)) {
-                return true;
-            }
+                if (corpCls == KOSPI && (KOSPI_EQUITY_IMPAIRMENT_STANDARD > impairmentRatio)) {
+                    return true;
+                }
 
-            if (corpCls == KOSDAQ && (KOSDAQ_EQUITY_IMPAIRMENT_STANDARD > impairmentRatio)) {
-                return true;
+                if (corpCls == KOSDAQ && (KOSDAQ_EQUITY_IMPAIRMENT_STANDARD > impairmentRatio)) {
+                    return true;
+                }
+            } catch(NumberFormatException e) {
+                throw e;
             }
         }
 
@@ -115,12 +123,16 @@ public class CorpEvaluator {
 
         int lossCount = 0;
         for (String operatingIncome : operatingIncomes) {
-            long longOperatingIncome = Long.parseLong(operatingIncome.replaceAll("\\,", ""));
+            try {
+                long longOperatingIncome = Long.parseLong(operatingIncome.replaceAll("\\,", ""));
 
-            logger.debug("isOperatingLoss : operatingIncome  = " + longOperatingIncome);
+                logger.debug("isOperatingLoss : operatingIncome  = " + longOperatingIncome);
 
-            if (longOperatingIncome < 0) {
-                lossCount++;
+                if (longOperatingIncome < 0) {
+                    lossCount++;
+                }
+            } catch(NumberFormatException e) {
+                throw e;
             }
         }
 
@@ -151,19 +163,23 @@ public class CorpEvaluator {
         }
 
         for (int index = 0; index < totEquities.length; index++) {
-            long totEquity          = Long.parseLong(totEquities[index].replaceAll("\\,", ""));
-            long incomeBeforeTax    = Long.parseLong(incomeBeforeTaxes[index].replaceAll("\\,", ""));
+            try {
+                long totEquity          = Long.parseLong(totEquities[index].replaceAll("\\,", ""));
+                long incomeBeforeTax    = Long.parseLong(incomeBeforeTaxes[index].replaceAll("\\,", ""));
 
-            logger.debug("isLossBeforeTax : totEquity           = " + totEquity);
-            logger.debug("isLossBeforeTax : incomeBeforeTax     = " + incomeBeforeTax);
+                logger.debug("isLossBeforeTax : totEquity           = " + totEquity);
+                logger.debug("isLossBeforeTax : incomeBeforeTax     = " + incomeBeforeTax);
 
-            if (incomeBeforeTax < 0) {
-                int lossBeforeTaxRatio = (int) ((float) incomeBeforeTax / (float) totEquity * 100);
-                logger.debug("isLossBeforeTax : lossBeforeTaxRatio  = " + lossBeforeTaxRatio);
+                if (incomeBeforeTax < 0) {
+                    int lossBeforeTaxRatio = (int) ((float) incomeBeforeTax / (float) totEquity * 100);
+                    logger.debug("isLossBeforeTax : lossBeforeTaxRatio  = " + lossBeforeTaxRatio);
 
-                if (lossBeforeTaxRatio < KOSDAQ_LOSS_BEFORE_TAX_STANDARD) {
-                    return true;
+                    if (lossBeforeTaxRatio < KOSDAQ_LOSS_BEFORE_TAX_STANDARD) {
+                        return true;
+                    }
                 }
+            } catch(NumberFormatException e) {
+                throw e;
             }
         }
 
