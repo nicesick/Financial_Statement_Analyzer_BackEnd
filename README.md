@@ -10,6 +10,57 @@ Open Dart API를 이용해 재무제표 데이터를 받아와서 데이터를 �
 
 
 
+## Environment
+
+* [IntelliJ IDEA Community](https://www.jetbrains.com/ko-kr/idea/)
+* [Spring-boot ](https://start.spring.io/) 2.4.2
+* [MySql](https://dev.mysql.com/downloads/installer/) 8.0.23
+* Spring-boot JPA
+* JDOM
+* [Open Dart API](https://opendart.fss.or.kr/)
+
+```xml
+<!-- pom.xml 에서 위의 라이브러리들을 다운받을 수 있습니다. -->
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.jdom/jdom -->
+    <dependency>
+        <groupId>org.jdom</groupId>
+        <artifactId>jdom</artifactId>
+        <version>2.0.2</version>
+    </dependency>
+</dependencies>
+```
+
+
+
 ## How to Execute
 
 * 구동 전 application.properties 파일에 입력해야 할 사항들이 있습니다.
