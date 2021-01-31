@@ -65,7 +65,7 @@ Open Dart API를 이용해 재무제표 데이터를 받아와서 데이터를 �
 
 * 구동 전 application.properties 파일에 입력해야 할 사항들이 있습니다.
   * Open Dart API 를 이용하기 위한 API Key
-    * [오픈다트 api](https://opendart.fss.or.kr/) 에서 발급받을 수 있습니다.
+    * [오픈다트 API](https://opendart.fss.or.kr/) 에서 발급받을 수 있습니다.
     * 2021.01.31 기준 - API Key 정보가 9개 이상 필요합니다.
   * DB DataSource 생성을 위한 정보 (driver-class-name, url, username, password)
 
@@ -154,7 +154,7 @@ logging.level.com.jihun.study.openDartApi = INFO
 * Open Dart API 분당, 일당 사용횟수 제한
 
   * 오픈 다트 api 는 분당 1000회 api key 당 하루 10000회 라는 제한이 존재합니다.
-  * <code>CountService</code> 를 생성하여, 오픈 다트 api 요청 마다 요청횟수를 저장하려고 시도하였으나, Thread 가 실행되는 환경에서는 제대로 된 연산이 불가능하였습니다. <code>syncronized</code> 키워드도 이용해 보았으나, 실패하였습니다.
+  * <code>CountService</code> 를 생성하여, 오픈 다트 api 요청 마다 요청횟수를 저장하려고 시도하였으나, Thread 가 실행되는 환경에서는 제대로 된 연산이 불가능하였습니다. <code>synchronized</code> 키워드도 이용해 보았으나, 실패하였습니다.
   * 해결책으로는 Thread 환경에서 사용될 수 있는 <code>AtomicInteger</code> 클래스를 사용하였습니다.
 
   ```java
@@ -379,6 +379,7 @@ logging.level.com.jihun.study.openDartApi = INFO
 2. Spring-Security 추가 필요
 3. 설계적 문제 : 평가방식을 주입할 수 있도록 evaluatorService로 새로 생성 필요
 4. 평가방식 추가 : 영업이익 기울기 계산방식 + S-RIM 계산방식
+5. API 요청 수를 줄일 수 있는 방법 필요
 
 
 
