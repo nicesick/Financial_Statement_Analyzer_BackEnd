@@ -1,10 +1,8 @@
 package com.jihun.study.openDartApi.dtoImpl;
 
-import com.jihun.study.openDartApi.dto.DartApiDto;
-
 import java.io.Serializable;
 
-public class DartApiDetailDto implements Serializable, DartApiDto {
+public class DartApiDetailDto implements Serializable {
     private String  rcept_no;
     private int     bsns_year;
     private String  corp_code;

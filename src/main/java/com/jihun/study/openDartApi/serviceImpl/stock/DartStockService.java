@@ -11,6 +11,7 @@ import com.jihun.study.openDartApi.repository.CorpDetailRepository;
 import com.jihun.study.openDartApi.repository.CorpUpdateRepository;
 import com.jihun.study.openDartApi.repository.CorporationRepository;
 import com.jihun.study.openDartApi.service.ApiService;
+import com.jihun.study.openDartApi.service.KeyService;
 import com.jihun.study.openDartApi.service.StockService;
 import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
 import com.jihun.study.openDartApi.utils.parser.DartXmlParser;
@@ -44,11 +45,12 @@ public class DartStockService implements StockService {
     private CorporationRepository   corporationRepository;
     private CorpDetailRepository    corpDetailRepository;
     private CorpUpdateRepository    corpUpdateRepository;
+    private KeyService              dartKeyCountService;
 
     private ApiService dartJsonService;
     private ApiService dartZipService;
 
-    private final String DART_KEY;
+//    private final String DART_KEY;
     private final String CORP_CODE_URI;
     private final String CORP_INFO_URI;
     private final String CORP_DETAIL_URI;
@@ -70,17 +72,19 @@ public class DartStockService implements StockService {
             , CorporationRepository         corporationRepository
             , CorpDetailRepository          corpDetailRepository
             , CorpUpdateRepository          corpUpdateRepository
+            , KeyService                    dartKeyCountService
             , @Qualifier("DartJsonService") ApiService dartJsonService
             , @Qualifier("DartZipService")  ApiService dartZipService
     ) {
         this.corporationRepository  = corporationRepository;
         this.corpDetailRepository   = corpDetailRepository;
         this.corpUpdateRepository   = corpUpdateRepository;
+        this.dartKeyCountService    = dartKeyCountService;
 
         this.dartJsonService    = dartJsonService;
         this.dartZipService     = dartZipService;
 
-        this.DART_KEY           = environment.getProperty("dart.key");
+//        this.DART_KEY           = environment.getProperty("dart.key");
         this.CORP_CODE_URI      = environment.getProperty("dart.corpCode.uri");
         this.CORP_INFO_URI      = environment.getProperty("dart.corpInfo.uri");
         this.CORP_DETAIL_URI    = environment.getProperty("dart.corpDetail.uri");
@@ -270,8 +274,8 @@ public class DartStockService implements StockService {
 //        }
 
         try {
-            corpKeys    = getCorpKeys();
 //            corpKeys    = corpKeysForTest;
+            corpKeys    = getCorpKeys();
             corpInfos   = getCorpInfos(corpKeys);
             corpDetails = getCorpDetails(corpInfos);
 
@@ -313,7 +317,6 @@ public class DartStockService implements StockService {
      * @param corpDetails
      */
     private List<Corporation> evalCorporation(final List<Corporation> oldCorpInfos, final Map<String, List<CorpDetail>> corpDetails) {
-        final String NUMBER_MATCH_EXPRESSION = "[+-]?\\d*(\\.\\d+)?";
         List<Corporation> corpInfos = new CopyOnWriteArrayList<>(oldCorpInfos);
 
         for (Corporation corpInfo : corpInfos) {
@@ -432,7 +435,7 @@ public class DartStockService implements StockService {
             for (String reprtCode : reprtCodes) {
                 ResponseEntity<DartApiResponseDto> response = dartJsonService.get(
                         CORP_DETAIL_URI + "?"
-                                + "crtfc_key="  + DART_KEY      + "&"
+                                + "crtfc_key="  + dartKeyCountService.getKey() + "&"
                                 + "corp_code="  + corpKeysStr   + "&"
                                 + "bsns_year="  + targetYear    + "&"
                                 + "reprt_code=" + reprtCode
@@ -602,22 +605,28 @@ public class DartStockService implements StockService {
     private List<Corporation> getCorpInfos(final List<Map<String, String>> corpKeys) throws LimitExceededException, InterruptedException {
         List<Corporation> output = new ArrayList<>();
 
+        int countIdx = 1;
         for (Map<String, String> corpKey : corpKeys) {
             String corpCode = corpKey.getOrDefault("corp_code", "");
 
             if ("".equals(corpCode)) {
+                countIdx++;
                 continue;
             }
 
             ResponseEntity<Corporation> response = dartJsonService.get(
                     CORP_INFO_URI + "?"
-                    + "crtfc_key=" + DART_KEY + "&"
+                    + "crtfc_key=" + dartKeyCountService.getKey() + "&"
                     + "corp_code=" + corpCode
                     , new HttpHeaders()
                     , Corporation.class
             );
 
-            logger.debug("corpInfo = " + response.getBody().toString());
+            System.out.println("response suceessed = "
+                    + countIdx
+                    + " / "
+                    + corpKeys.size());
+//            logger.debug("corpInfo = " + response.getBody().toString());
 
             /**
              * status 000 - 정상
@@ -631,6 +640,7 @@ public class DartStockService implements StockService {
             ) {
                 output.add(response.getBody());
             }
+            countIdx++;
         }
 
         if (output.size() <= 0) {
@@ -681,7 +691,7 @@ public class DartStockService implements StockService {
     private List<Map<String, String>> getCorpKeys() throws LimitExceededException, InterruptedException, IOException, JDOMException {
         ResponseEntity<byte[]> response = dartZipService.get(
                 CORP_CODE_URI + "?"
-                + "crtfc_key=" + DART_KEY
+                + "crtfc_key=" + dartKeyCountService.getKey()
                 , new HttpHeaders()
         );
 

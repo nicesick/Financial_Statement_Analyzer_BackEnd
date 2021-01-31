@@ -1,6 +1,8 @@
 package com.jihun.study.openDartApi;
 
+import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.service.ApiService;
+import com.jihun.study.openDartApi.serviceImpl.keyCount.DartKeyCountService;
 import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
 import com.jihun.study.openDartApi.utils.stream.ZipStream;
 import org.junit.jupiter.api.Test;
@@ -11,24 +13,49 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
+import javax.naming.LimitExceededException;
 import java.io.InputStream;
 import java.util.Map;
 
 @SpringBootTest
 class OpenDartApiApplicationTests {
 	private Environment environment;
-	private ApiService corpKeysService;
+	private ApiService 	corpKeysService;
 	private ApiService  dartService;
+	private ApiService	dartJsonService;
+	private DartKeyCountService dartKeyCountService;
 
 	@Autowired
 	public OpenDartApiApplicationTests(
 			Environment environment
 			, @Qualifier("DartZipService")  ApiService corpKeysService
 			, @Qualifier("DartTestService") ApiService dartService
+			, @Qualifier("DartJsonService") ApiService dartJsonService
+			, DartKeyCountService dartKeyCountService
 	) {
 		this.environment        = environment;
 		this.corpKeysService    = corpKeysService;
 		this.dartService        = dartService;
+		this.dartJsonService 	= dartJsonService;
+		this.dartKeyCountService= dartKeyCountService;
+	}
+
+	@Test
+	public void corpInfosTest() throws LimitExceededException, InterruptedException {
+		/**
+		 * 삼성전자 - 00126380
+		 * 셀트리온 - 00421045
+		 */
+		ResponseEntity<Corporation> response = dartJsonService.get(
+				"https://opendart.fss.or.kr/api/company.json" + "?"
+						+ "crtfc_key=" + dartKeyCountService.getKey() + "&"
+						+ "corp_code=" + "00126380"
+				, new HttpHeaders()
+				, Corporation.class
+		);
+
+		System.out.println("response = " + response.getStatusCode());
+		System.out.println("response = " + response.getBody().toString());
 	}
 
 	@Test

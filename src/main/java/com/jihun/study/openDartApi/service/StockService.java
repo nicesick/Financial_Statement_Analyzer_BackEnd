@@ -1,13 +1,9 @@
 package com.jihun.study.openDartApi.service;
 
 import com.jihun.study.openDartApi.dto.DartDto;
-import org.jdom2.JDOMException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 
-import javax.naming.LimitExceededException;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 public interface StockService {
