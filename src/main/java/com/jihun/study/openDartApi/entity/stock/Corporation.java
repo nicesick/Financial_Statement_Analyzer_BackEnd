@@ -77,6 +77,11 @@ public class Corporation implements Serializable, DartDto, DartApiDto {
     public Corporation() {
     }
 
+    public Corporation(String corpCode, String corpName) {
+        this.corpCode = corpCode;
+        this.corpName = corpName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

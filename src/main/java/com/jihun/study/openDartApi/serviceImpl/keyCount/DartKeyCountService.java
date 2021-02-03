@@ -136,10 +136,10 @@ public class DartKeyCountService implements CountService, KeyService {
 //            Thread.sleep(60000);
 //        }
 
-        String key = dartKeys.get(this.getCount(localDate, localTime) / (MAX_REQ_PER_DAY + 1));
+        this.addCount(localDate, localTime);
+        String key = dartKeys.get(this.getCount(localDate, localTime) / MAX_REQ_PER_DAY);
         System.out.println("key = " + key);
 
-        this.addCount(localDate, localTime);
         return key;
     }
 

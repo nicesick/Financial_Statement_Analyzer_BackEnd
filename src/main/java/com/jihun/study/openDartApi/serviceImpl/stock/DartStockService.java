@@ -189,9 +189,10 @@ public class DartStockService implements StockService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void progressUpdating() throws LimitExceededException, InterruptedException, IOException, IllegalAccessException, InvocationTargetException, JDOMException, NoSuchMethodException {
-        List<Map<String, String>>       corpKeys    = null;
-        List<Corporation>               corpInfos   = null;
+        List<Corporation>               corpKeys    = null;
         Map<String, List<CorpDetail>>   corpDetails = null;
+
+        List<Corporation>               corpInfos   = null;
 
 //        /**
 //         * Testing Code
@@ -275,9 +276,18 @@ public class DartStockService implements StockService {
 
         try {
 //            corpKeys    = corpKeysForTest;
+            /**
+             * 2021.02.03
+             *
+             * API 호출 횟수를 줄이기 위해
+             *
+             * corpKeys -> corpInfos    -> corpDetails 순서가
+             * corpKeys -> corpDetails  -> corpInfos 순서로 변경되었습니다.
+             */
             corpKeys    = getCorpKeys();
-            corpInfos   = getCorpInfos(corpKeys);
-            corpDetails = getCorpDetails(corpInfos);
+            corpDetails = getCorpDetails(corpKeys);
+            corpInfos   = addCorpDetails(corpKeys, corpDetails);
+            corpInfos   = getCorpOverviews(corpInfos);
 
             corpInfos   = evalCorporation(corpInfos, corpDetails);
             saveCorporation(corpInfos);
@@ -370,6 +380,32 @@ public class DartStockService implements StockService {
     }
 
     /**
+     * 2021.02.03
+     *
+     * CorpInfos, CorpDetails 순서가 바뀌면서 Corporation 에 CorpDetail 을 미리 입력합니다.
+     *
+     * @param oldCorpInfos
+     * @param corpDetails
+     *
+     * @return Corporation 리스트
+     */
+    private List<Corporation> addCorpDetails(final List<Corporation> oldCorpInfos, final Map<String, List<CorpDetail>> corpDetails) {
+        List<Corporation> corpInfos = new CopyOnWriteArrayList<>(oldCorpInfos);
+
+        for (Corporation corpInfo : corpInfos) {
+            List<CorpDetail> corpDetail = corpDetails.getOrDefault(corpInfo.getCorpCode(), null);
+
+            if (corpDetail == null) {
+                corpInfos.remove(corpInfo);
+            } else {
+                corpInfo.addCorpDetails(corpDetail);
+            }
+        }
+
+        return corpInfos;
+    }
+
+    /**
      * getCorpDetails
      *
      * 1. Open Dart API를 통해 기업의 4년치 재무정보를 획득합니다.
@@ -422,40 +458,52 @@ public class DartStockService implements StockService {
      * @throws InvocationTargetException
      */
     private Map<String, List<CorpDetail>> getCorpDetails(final List<Corporation> corpInfos) throws LimitExceededException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Map<String, List<CorpDetail>> output = new HashMap<>();
+        final int                       JOIN_LENGTH = 850;
+        Map<String, List<CorpDetail>>   output      = new HashMap<>();
 
         int         targetYear  = LocalDate.now().getYear();
         String[]    reprtCodes  = {"11011", "11014", "11012", "11013"};
-        String      corpKeysStr = joinCorpKeys(corpInfos);
-
         int         storeCount  = 0;
+
         while(storeCount <= 4
             && (LocalDate.now().getYear() - targetYear) < 5
         ) {
+            boolean         isStored    = false;
             for (String reprtCode : reprtCodes) {
-                ResponseEntity<DartApiResponseDto> response = dartJsonService.get(
-                        CORP_DETAIL_URI + "?"
-                                + "crtfc_key="  + dartKeyCountService.getKey() + "&"
-                                + "corp_code="  + corpKeysStr   + "&"
-                                + "bsns_year="  + targetYear    + "&"
-                                + "reprt_code=" + reprtCode
-                        , new HttpHeaders()
-                        , DartApiResponseDto.class
-                );
+                int         joinIdx     = 0;
+                String      corpKeysStr = joinCorpKeys(corpInfos, joinIdx, joinIdx + JOIN_LENGTH);
 
-                logger.debug("response : status     = " + response.getBody().getStatus());
+                while(!"".equals(corpKeysStr)) {
+                    ResponseEntity<DartApiResponseDto> response = dartJsonService.get(
+                            CORP_DETAIL_URI + "?"
+                                    + "crtfc_key="  + dartKeyCountService.getKey() + "&"
+                                    + "corp_code="  + corpKeysStr   + "&"
+                                    + "bsns_year="  + targetYear    + "&"
+                                    + "reprt_code=" + reprtCode
+                            , new HttpHeaders()
+                            , DartApiResponseDto.class
+                    );
 
-                if ("000".equals(response.getBody().getStatus())) {
-                    parseDetailDto(output, response.getBody());
+                    logger.debug("response : status     = " + response.getBody().getStatus());
 
+                    if ("000".equals(response.getBody().getStatus())
+                        || "013".equals(response.getBody().getStatus())
+                    ) {
+                        if ("000".equals(response.getBody().getStatus())) {
+                            parseDetailDto(output, response.getBody());
+                            isStored = true;
+                        }
+
+                        joinIdx     += JOIN_LENGTH;
+                        corpKeysStr = joinCorpKeys(corpInfos, joinIdx, joinIdx + JOIN_LENGTH);
+                    } else {
+                        throw new IllegalAccessException();
+                    }
+                }
+
+                if (isStored) {
                     storeCount++;
-
-//                    System.out.println("output.toString() = " + output.toString());
                     break;
-                } else if ("013".equals(response.getBody().getStatus())) {
-                    continue;
-                } else {
-                    throw new IllegalAccessException();
                 }
             }
             targetYear--;
@@ -469,13 +517,30 @@ public class DartStockService implements StockService {
      *
      * Open Dart API 재무정보 요청에 필요한 요청기업 고유번호를 ',' 을 Separator 로 해서 join 합니다.
      *
+     * 2021.02.02
+     * 인덱스 범위만큼만 corpKeys 를 join 하는 것으로 변경
+     * 
      * @param corpInfos
+     * @param fromIdx
+     * @param toIdx
+     * 
      * @return 고유번호 문자열
      */
-    private String joinCorpKeys(final List<Corporation> corpInfos) {
+    private String joinCorpKeys(final List<Corporation> corpInfos, int fromIdx, int toIdx) {
+        if (fromIdx < 0             || fromIdx >= corpInfos.size()
+            || fromIdx >= toIdx     || toIdx <= fromIdx
+            || toIdx < 0
+        ) {
+            return "";
+        } else if (toIdx >= corpInfos.size()) {
+            toIdx = corpInfos.size() - 1;
+        }
+
         StringBuilder stringBuilder = new StringBuilder();
 
-        for (Corporation corpInfo : corpInfos) {
+        for (int idx = fromIdx ; idx < toIdx; idx++) {
+            Corporation corpInfo = corpInfos.get(idx);
+            
             stringBuilder.append(corpInfo.getCorpCode());
             stringBuilder.append(',');
         }
@@ -569,7 +634,7 @@ public class DartStockService implements StockService {
     }
 
     /**
-     * getCorpInfos
+     * getCorpOverviews
      *
      * Open Dart API에서 획득한 고유번호를 이용해 추가적인 기업정보를 획득하여 기업정보 Entity 에 저장합니다.
      *
@@ -596,18 +661,21 @@ public class DartStockService implements StockService {
      * acc_mt	        결산월(MM)
      * }
      *
-     * @param corpKeys
+     * 2021.02.03
+     * input 형식이 List<Map<String, String>> 에서 List<Corporation> 으로 변경되었습니다.
+     *
+     * @param corpInfos
      * @return 기업정보 리스트
      *
      * @throws LimitExceededException
      * @throws InterruptedException
      */
-    private List<Corporation> getCorpInfos(final List<Map<String, String>> corpKeys) throws LimitExceededException, InterruptedException {
+    private List<Corporation> getCorpOverviews(final List<Corporation> corpInfos) throws LimitExceededException, InterruptedException {
         List<Corporation> output = new ArrayList<>();
 
         int countIdx = 1;
-        for (Map<String, String> corpKey : corpKeys) {
-            String corpCode = corpKey.getOrDefault("corp_code", "");
+        for (Corporation corpInfo : corpInfos) {
+            String corpCode = corpInfo.getCorpCode();
 
             if ("".equals(corpCode)) {
                 countIdx++;
@@ -625,7 +693,7 @@ public class DartStockService implements StockService {
             System.out.println("response suceessed = "
                     + countIdx
                     + " / "
-                    + corpKeys.size());
+                    + corpInfos.size());
 //            logger.debug("corpInfo = " + response.getBody().toString());
 
             /**
@@ -681,6 +749,9 @@ public class DartStockService implements StockService {
      *     }, ...]
      * </pre>
      *
+     * 2021.02.03
+     * return 형식이 List<Map<String, String>> -> List<Corporation> 형식으로 변경되었습니다.
+     *
      * @return 기업 고유번호 리스트
      *
      * @throws LimitExceededException
@@ -688,7 +759,9 @@ public class DartStockService implements StockService {
      * @throws IOException
      * @throws JDOMException
      */
-    private List<Map<String, String>> getCorpKeys() throws LimitExceededException, InterruptedException, IOException, JDOMException {
+    private List<Corporation> getCorpKeys() throws LimitExceededException, InterruptedException, IOException, JDOMException {
+        List<Corporation> output = new ArrayList<>();
+
         ResponseEntity<byte[]> response = dartZipService.get(
                 CORP_CODE_URI + "?"
                 + "crtfc_key=" + dartKeyCountService.getKey()
@@ -705,6 +778,10 @@ public class DartStockService implements StockService {
         String[]                    tags        = {"corp_code", "corp_name"};
         List<Map<String, String>>   corpKeys    = DartXmlParser.parse(corpKeysXml.get(0), tags);
 
-        return corpKeys;
+        for (Map<String, String> corpKey : corpKeys) {
+            output.add(new Corporation(corpKey.get("corp_code"), corpKey.get("corp_name")));
+        }
+
+        return output;
     }
 }

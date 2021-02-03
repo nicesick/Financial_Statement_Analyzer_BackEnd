@@ -1,10 +1,16 @@
 package com.jihun.study.openDartApi;
 
+import com.jihun.study.openDartApi.dtoImpl.DartApiDetailDto;
+import com.jihun.study.openDartApi.dtoImpl.DartApiResponseDto;
+import com.jihun.study.openDartApi.entity.stock.CorpDetail;
 import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.service.ApiService;
+import com.jihun.study.openDartApi.service.KeyService;
 import com.jihun.study.openDartApi.serviceImpl.keyCount.DartKeyCountService;
 import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
+import com.jihun.study.openDartApi.utils.parser.DartXmlParser;
 import com.jihun.study.openDartApi.utils.stream.ZipStream;
+import org.jdom2.JDOMException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,30 +20,247 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 import javax.naming.LimitExceededException;
-import java.io.InputStream;
-import java.util.Map;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.util.*;
 
 @SpringBootTest
 class OpenDartApiApplicationTests {
 	private Environment environment;
-	private ApiService 	corpKeysService;
+	private ApiService 	dartZipService;
 	private ApiService  dartService;
 	private ApiService	dartJsonService;
-	private DartKeyCountService dartKeyCountService;
+	private KeyService 	dartKeyCountService;
 
 	@Autowired
 	public OpenDartApiApplicationTests(
-			Environment environment
-			, @Qualifier("DartZipService")  ApiService corpKeysService
+			  Environment 	environment
+			, KeyService 	dartKeyCountService
+			, @Qualifier("DartZipService")  ApiService dartZipService
 			, @Qualifier("DartTestService") ApiService dartService
 			, @Qualifier("DartJsonService") ApiService dartJsonService
-			, DartKeyCountService dartKeyCountService
 	) {
-		this.environment        = environment;
-		this.corpKeysService    = corpKeysService;
-		this.dartService        = dartService;
-		this.dartJsonService 	= dartJsonService;
-		this.dartKeyCountService= dartKeyCountService;
+		this.environment        	= environment;
+		this.dartKeyCountService	= dartKeyCountService;
+
+		this.dartZipService 		= dartZipService;
+		this.dartService        	= dartService;
+		this.dartJsonService 		= dartJsonService;
+	}
+
+	@Test
+	public void getMaxCorpDetailLengthTest() throws LimitExceededException, InterruptedException, IOException, JDOMException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+		final String CORP_CODE_URI = environment.getProperty("dart.corpCode.uri");
+
+		ResponseEntity<byte[]> response = dartZipService.get(
+				CORP_CODE_URI + "?"
+						+ "crtfc_key=" + dartKeyCountService.getKey()
+				, new HttpHeaders()
+		);
+
+		List<String> corpKeysXml = ZipStream.streamZip(response.getBody(), "UTF-8");
+
+		String[]                    tags        = {"corp_code", "corp_name"};
+		List<Map<String, String>>   corpKeys    = DartXmlParser.parse(corpKeysXml.get(0), tags);
+
+		System.out.println("corpKeys.size() = " + corpKeys.size());
+
+		final String 					CORP_DETAIL_URI = environment.getProperty("dart.corpDetail.uri");
+		final int                       JOIN_LENGTH 	= 850;
+		Map<String, List<CorpDetail>>   output      	= new HashMap<>();
+
+		int         targetYear  = LocalDate.now().getYear();
+		String[]    reprtCodes  = {"11011", "11014", "11012", "11013"};
+		int         storeCount  = 0;
+
+		while(storeCount <= 4
+			&& (LocalDate.now().getYear() - targetYear) < 5
+		) {
+			boolean         isStored    = false;
+			for (String reprtCode : reprtCodes) {
+				int         joinIdx     = 0;
+				String      corpKeysStr = joinCorpKeys(corpKeys, joinIdx, joinIdx + JOIN_LENGTH);
+
+				while(!"".equals(corpKeysStr)) {
+					ResponseEntity<DartApiResponseDto> response2 = dartJsonService.get(
+							CORP_DETAIL_URI + "?"
+									+ "crtfc_key="  + dartKeyCountService.getKey() + "&"
+									+ "corp_code="  + corpKeysStr   + "&"
+									+ "bsns_year="  + targetYear    + "&"
+									+ "reprt_code=" + reprtCode
+							, new HttpHeaders()
+							, DartApiResponseDto.class
+					);
+
+					System.out.println("response2.getStatusCodeValue() = " + response2.getStatusCodeValue());
+					System.out.println("response2.getBody().getStatus() = " + response2.getBody().getStatus());
+					System.out.println("response2.getBody().getMessage() = " + response2.getBody().getMessage());
+
+					if ("000".equals(response2.getBody().getStatus())
+							|| "013".equals(response2.getBody().getStatus())) {
+						if ("000".equals(response2.getBody().getStatus())) {
+							parseDetailDto(output, response2.getBody());
+
+							System.out.println("output.size() = " + output.size());
+							isStored = true;
+						}
+
+						joinIdx 	+= JOIN_LENGTH;
+						corpKeysStr = joinCorpKeys(corpKeys, joinIdx, joinIdx + JOIN_LENGTH);
+					} else {
+						throw new IllegalAccessException();
+					}
+				}
+
+				if (isStored) {
+					storeCount++;
+					break;
+				}
+			}
+			targetYear--;
+		}
+
+		Collection<List<CorpDetail>> oneOutput = output.values();
+
+		for (List<CorpDetail> oneOut : oneOutput) {
+			for (CorpDetail corpDetail : oneOut) {
+				System.out.println("corpDetail = " + corpDetail.toString());
+			}
+		}
+	}
+
+	/**
+	 * getCorpKeysStr
+	 *
+	 * Open Dart API 재무정보 요청에 필요한 요청기업 고유번호를 ',' 을 Separator 로 해서 join 합니다.
+	 *
+	 * 2021.02.02
+	 * 인덱스 범위만큼만 corpKeys 를 join 하는 것으로 변경
+	 *
+	 * @param corpInfos
+	 * @param fromIdx
+	 * @param toIdx
+	 *
+	 * @return 고유번호 문자열
+	 */
+	private String joinCorpKeys(final List<Map<String, String>> corpInfos, int fromIdx, int toIdx) {
+		if (fromIdx < 0             || fromIdx >= corpInfos.size()
+				|| fromIdx >= toIdx     || toIdx <= fromIdx
+				|| toIdx < 0
+		) {
+			return "";
+		} else if (toIdx >= corpInfos.size()) {
+			toIdx = corpInfos.size() - 1;
+		}
+
+		StringBuilder stringBuilder = new StringBuilder();
+
+		for (int idx = fromIdx ; idx < toIdx; idx++) {
+			String corpInfo = corpInfos.get(idx).get("corp_code");
+
+			stringBuilder.append(corpInfo);
+			stringBuilder.append(',');
+		}
+
+		stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+		return stringBuilder.toString();
+	}
+
+	private final Map<String, String> DETAIL_MAPPER = new HashMap<String, String>() {{
+		put("자산총계" , "TotAssets");
+		put("부채총계" , "TotLiability");
+		put("자본총계" , "TotStockholdersEquity");
+		put("자본금" , "StockholdersEquity");
+		put("매출액" , "Revenue");
+		put("영업이익" , "OperatingIncome");
+		put("법인세차감전 순이익" , "IncomeBeforeTax");
+		put("당기순이익" , "NetIncome");
+	}};
+
+	/**
+	 * parseDetailDto
+	 *
+	 * DartResponseDto 안에 있는 DartDetailDto 값을 추출하여 CorpDetail 형식으로 변환합니다.
+	 *
+	 * @param input
+	 * @param dartApiResponseDto
+	 *
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalAccessException
+	 */
+	private void parseDetailDto(Map<String, List<CorpDetail>> input, final DartApiResponseDto dartApiResponseDto) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+		List<DartApiDetailDto> dartApiDetailDtos = dartApiResponseDto.getList();
+
+		for (DartApiDetailDto dartApiDetailDto : dartApiDetailDtos) {
+			/**
+			 * DartDetailDto 값 추출은
+			 * 재무제표의 자산총계, 부채총계, 자본총계, 자본금, 매출액, 영업이익, 법인세차감전 순이익, 당기순이익을 대상으로 합니다.
+			 */
+			if (
+//                "CFS".equals(dartDetailDto.getFs_div()) &&
+					DETAIL_MAPPER.containsKey(dartApiDetailDto.getAccount_nm())
+			) {
+				/**
+				 * input 에서 corp_code, bsns_year, reprt_code 값이 동일한 CorpDetail 을 추출합니다.
+				 * 없다면 새로 생성하여 추가합니다.
+				 */
+				List<CorpDetail>    corpDetails         = input.getOrDefault(dartApiDetailDto.getCorp_code(), null);
+				CorpDetail          targetCorpDetail    = null;
+
+				if (corpDetails == null) {
+					corpDetails = new ArrayList<>();
+					input.put(dartApiDetailDto.getCorp_code(), corpDetails);
+				}
+
+				for (CorpDetail corpDetail : corpDetails) {
+					if (dartApiDetailDto.getBsns_year() == corpDetail.getBsnsYear()
+							&& dartApiDetailDto.getReprt_code().equals(corpDetail.getReprtCode())
+					) {
+						targetCorpDetail = corpDetail;
+						break;
+					}
+				}
+
+				if (targetCorpDetail == null) {
+					targetCorpDetail = new CorpDetail(
+							dartApiDetailDto.getCorp_code()
+							, dartApiDetailDto.getBsns_year()
+							, dartApiDetailDto.getReprt_code()
+							, dartApiDetailDto.getThstrm_dt());
+
+					corpDetails.add(targetCorpDetail);
+				}
+
+				/**
+				 * 해당 변수에 값을 넣어줍니다.
+				 *
+				 * 연결재무제표 값이 우선시 되며, 만약 연결재무제표가 없다면 재무제표 값이 들어갑니다.
+				 */
+				Class   targetClass     = targetCorpDetail.getClass();
+				Method targetGetMethod = null;
+				Method  targetSetMethod = null;
+
+				for (Method method : targetClass.getDeclaredMethods()) {
+					if (method.getName().equals("set" + DETAIL_MAPPER.get(dartApiDetailDto.getAccount_nm()))) {
+						targetGetMethod = targetClass.getMethod("get" + DETAIL_MAPPER.get(dartApiDetailDto.getAccount_nm()));
+						targetSetMethod = method;
+						break;
+					}
+				}
+
+				if (targetSetMethod == null || targetGetMethod == null) {
+					throw new NoSuchMethodException();
+				}
+
+				Object methodGetResult = targetGetMethod.invoke(targetCorpDetail);
+				if (methodGetResult == null || "0".equals(methodGetResult.toString())) {
+					targetSetMethod.invoke(targetCorpDetail, dartApiDetailDto.getThstrm_amount());
+				}
+			}
+		}
 	}
 
 	@Test
