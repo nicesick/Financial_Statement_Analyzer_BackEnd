@@ -67,13 +67,14 @@ Open Dart API를 이용해 재무제표 데이터를 받아와서 데이터를 �
   * Open Dart API 를 이용하기 위한 API Key
     * [오픈다트 API](https://opendart.fss.or.kr/) 에서 발급받을 수 있습니다.
     * 2021.01.31 기준 - API Key 정보가 9개 이상 필요합니다.
+    * **2021.02.04 기준 - API Key 정보 1개면 충분합니다.**
   * DB DataSource 생성을 위한 정보 (driver-class-name, url, username, password)
 
 ```properties
 # resource/application.properties
 
 # dart key 정보들은 ',' 을 기준으로 나눠집니다.
-dart.key            = { Your Open Dart API Key }, { Your Open Dart API Key }, ...
+dart.key            = { Your Open Dart API Key }, { Your Open Dart API Key }
 
 dart.corpCode.uri   = https://opendart.fss.or.kr/api/corpCode.xml
 dart.corpInfo.uri   = https://opendart.fss.or.kr/api/company.json
@@ -379,7 +380,9 @@ logging.level.com.jihun.study.openDartApi = INFO
 2. Spring-Security 추가 필요
 3. 설계적 문제 : 평가방식을 주입할 수 있도록 evaluatorService로 새로 생성 필요
 4. 평가방식 추가 : 영업이익 기울기 계산방식 + S-RIM 계산방식
-5. API 요청 수를 줄일 수 있는 방법 필요
+5. ~~API 요청 수를 줄일 수 있는 방법 필요~~
+   * 비즈니스 로직 순서를 변경하여 API 요청 수를 줄일 수 있었습니다.
+   * 2021.02.04 기준 : 84000 호출 횟수 -> **3000 호출 횟수**
 
 
 
