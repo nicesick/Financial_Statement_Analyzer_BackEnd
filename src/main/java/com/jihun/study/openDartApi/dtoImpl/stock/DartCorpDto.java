@@ -1,6 +1,6 @@
-package com.jihun.study.openDartApi.dtoImpl;
+package com.jihun.study.openDartApi.dtoImpl.stock;
 
-import com.jihun.study.openDartApi.dto.DartDto;
+import com.jihun.study.openDartApi.dto.stock.DartDto;
 
 import java.io.Serializable;
 

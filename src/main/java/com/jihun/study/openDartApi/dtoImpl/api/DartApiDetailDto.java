@@ -1,4 +1,4 @@
-package com.jihun.study.openDartApi.dtoImpl;
+package com.jihun.study.openDartApi.dtoImpl.api;
 
 import java.io.Serializable;
 

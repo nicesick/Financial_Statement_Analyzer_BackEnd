@@ -1,4 +1,4 @@
-package com.jihun.study.openDartApi.repository;
+package com.jihun.study.openDartApi.repository.count;
 
 import com.jihun.study.openDartApi.entity.count.RequestCount;
 import com.jihun.study.openDartApi.entity.count.RequestCountPK;

@@ -1,14 +1,12 @@
 package com.jihun.study.openDartApi.serviceImpl.api;
 
-import com.jihun.study.openDartApi.dto.DartApiDto;
-import com.jihun.study.openDartApi.service.ApiService;
+import com.jihun.study.openDartApi.service.api.ApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 @Service("DartZipService")

@@ -1,4 +1,4 @@
-package com.jihun.study.openDartApi.service;
+package com.jihun.study.openDartApi.service.api;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;

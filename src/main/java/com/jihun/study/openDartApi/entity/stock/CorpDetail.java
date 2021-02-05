@@ -1,6 +1,6 @@
 package com.jihun.study.openDartApi.entity.stock;
 
-import com.jihun.study.openDartApi.dto.DartDto;
+import com.jihun.study.openDartApi.dto.stock.DartDto;
 
 import javax.persistence.*;
 import java.io.Serializable;

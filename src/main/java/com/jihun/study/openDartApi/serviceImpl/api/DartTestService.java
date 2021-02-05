@@ -1,6 +1,6 @@
 package com.jihun.study.openDartApi.serviceImpl.api;
 
-import com.jihun.study.openDartApi.service.ApiService;
+import com.jihun.study.openDartApi.service.api.ApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;

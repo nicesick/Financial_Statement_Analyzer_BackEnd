@@ -1,6 +1,6 @@
-package com.jihun.study.openDartApi.service;
+package com.jihun.study.openDartApi.service.stock;
 
-import com.jihun.study.openDartApi.dto.DartDto;
+import com.jihun.study.openDartApi.dto.stock.DartDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 

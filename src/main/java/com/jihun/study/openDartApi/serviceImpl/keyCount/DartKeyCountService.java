@@ -2,9 +2,9 @@ package com.jihun.study.openDartApi.serviceImpl.keyCount;
 
 import com.jihun.study.openDartApi.entity.count.RequestCount;
 import com.jihun.study.openDartApi.entity.count.RequestCountPK;
-import com.jihun.study.openDartApi.repository.RequestCountRepository;
-import com.jihun.study.openDartApi.service.CountService;
-import com.jihun.study.openDartApi.service.KeyService;
+import com.jihun.study.openDartApi.repository.count.RequestCountRepository;
+import com.jihun.study.openDartApi.service.keyCount.CountService;
+import com.jihun.study.openDartApi.service.keyCount.KeyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

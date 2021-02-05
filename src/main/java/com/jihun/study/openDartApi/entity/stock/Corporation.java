@@ -1,8 +1,8 @@
 package com.jihun.study.openDartApi.entity.stock;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.jihun.study.openDartApi.dto.DartApiDto;
-import com.jihun.study.openDartApi.dto.DartDto;
+import com.jihun.study.openDartApi.dto.api.DartApiDto;
+import com.jihun.study.openDartApi.dto.stock.DartDto;
 import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;

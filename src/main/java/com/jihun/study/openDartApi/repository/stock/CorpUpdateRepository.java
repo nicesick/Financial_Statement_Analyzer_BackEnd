@@ -1,4 +1,4 @@
-package com.jihun.study.openDartApi.repository;
+package com.jihun.study.openDartApi.repository.stock;
 
 import com.jihun.study.openDartApi.entity.stock.CorpUpdate;
 import org.springframework.data.repository.CrudRepository;

@@ -5,6 +5,8 @@
 ## History
 
 >  2021-02-04 : 비즈니스 로직 변경 - Open Dart API 호출 횟수 감소 (84000 -> 3000)
+>
+>  2021-02-05 : file structure 변경 : interface 부분도 패키지를 분류하였습니다.
 
 
 
@@ -119,7 +121,17 @@ logging.level.com.jihun.study.openDartApi = INFO
 >
 > dto
 >
+> ```
+> * api
+> * stock
+> ```
+>
 > dtoImpl
+>
+> ```
+> * api
+> * stock
+> ```
 >
 > entity
 >
@@ -128,7 +140,18 @@ logging.level.com.jihun.study.openDartApi = INFO
 >
 > repository
 >
+> ```
+> * count
+> * stock
+> ```
+>
 > service
+>
+> ```
+> * api
+> * keyCount
+> * stock
+> ```
 >
 > serviceImpl
 >

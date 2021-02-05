@@ -1,12 +1,11 @@
 package com.jihun.study.openDartApi;
 
-import com.jihun.study.openDartApi.dtoImpl.DartApiDetailDto;
-import com.jihun.study.openDartApi.dtoImpl.DartApiResponseDto;
+import com.jihun.study.openDartApi.dtoImpl.api.DartApiDetailDto;
+import com.jihun.study.openDartApi.dtoImpl.api.DartApiResponseDto;
 import com.jihun.study.openDartApi.entity.stock.CorpDetail;
 import com.jihun.study.openDartApi.entity.stock.Corporation;
-import com.jihun.study.openDartApi.service.ApiService;
-import com.jihun.study.openDartApi.service.KeyService;
-import com.jihun.study.openDartApi.serviceImpl.keyCount.DartKeyCountService;
+import com.jihun.study.openDartApi.service.api.ApiService;
+import com.jihun.study.openDartApi.service.keyCount.KeyService;
 import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
 import com.jihun.study.openDartApi.utils.parser.DartXmlParser;
 import com.jihun.study.openDartApi.utils.stream.ZipStream;
