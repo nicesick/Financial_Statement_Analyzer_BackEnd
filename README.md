@@ -7,6 +7,8 @@
 >  2021-02-04 : 비즈니스 로직 변경 - Open Dart API 호출 횟수 감소 (84000 -> 3000)
 >
 >  2021-02-05 : file structure 변경 : interface 부분도 패키지를 분류하였습니다.
+>
+>  2021-02-09 : Evaluation 부분을 Utils 에서 EvaluationService 로 분류하였습니다.
 
 
 
@@ -123,6 +125,7 @@ logging.level.com.jihun.study.openDartApi = INFO
 >
 > ```
 > * api
+> * evaluate
 > * stock
 > ```
 >
@@ -130,6 +133,7 @@ logging.level.com.jihun.study.openDartApi = INFO
 >
 > ```
 > * api
+> * evaluate
 > * stock
 > ```
 >
@@ -149,6 +153,7 @@ logging.level.com.jihun.study.openDartApi = INFO
 >
 > ```
 > * api
+> * evaluate
 > * keyCount
 > * stock
 > ```
@@ -156,6 +161,7 @@ logging.level.com.jihun.study.openDartApi = INFO
 > serviceImpl
 >
 > 	* api
+> 	* evaluate
 > 	* keyCount
 > 	* stock
 >
@@ -407,7 +413,9 @@ logging.level.com.jihun.study.openDartApi = INFO
 
 1. Update 환경 배치 방법으로 변경 필요
 2. Spring-Security 추가 필요
-3. 설계적 문제 : 평가방식을 주입할 수 있도록 evaluatorService로 새로 생성 필요
+3. ~~설계적 문제 : 평가방식을 주입할 수 있도록 evaluatorService로 새로 생성 필요~~
+   * 2021.02.09 기준 : IssueEvaluateService를 생성하여 평가방식을 Service 형식으로 구분하였습니다.
+   * 또한 여러개의 EvaluateService를 등록하여 여러개의 평가를 저장할 수 있도록 Controller 와 Corporation을 수정하였습니다.
 4. 평가방식 추가 : 영업이익 기울기 계산방식 + S-RIM 계산방식
 5. ~~API 요청 수를 줄일 수 있는 방법 필요~~
    * 비즈니스 로직 순서를 변경하여 API 요청 수를 줄일 수 있었습니다.
@@ -426,3 +434,6 @@ logging.level.com.jihun.study.openDartApi = INFO
   * [java 의 스트링 인코딩이해(자바 한글 깨짐해법을 위한연구)](https://gbox3d.tistory.com/entry/javaeuckr) : inputStream, outputStream 으로 데이터를 주고 받을 때, 인코딩 문제를 해결했던 문서입니다.
   * [자바 파일 압축과 압축 해제(ZipInputStream, ZipOutputStream)](https://madplay.github.io/post/java-file-zip) : zipInputStream 에 대해 이해할 때 보았던 문서입니다.
   * [Java Atomic Type 이해하기(AtomicBoolean, AtomicInteger)](https://readystory.tistory.com/53) : atomicInteger 를 처음 이해할 때 도움을 받았던 문서입니다.
+* JsonProperty
+  * [Duplicate json property when converting java object to json string using jackson](https://stackoverflow.com/questions/13262662/duplicate-json-property-when-converting-java-object-to-json-string-using-jackson) : JsonProperty 를 설정하여 데이터를 보내주었을 경우 중복된 변수가 생성될 때가 있었습니다. 이를 예방할 수 있었던 문서입니다.
+  * [Read embedded object in Jackson](https://stackoverflow.com/questions/10036530/read-embedded-object-in-jackson) : JPA EmbeddedId 를 사용하였을 때, Embeddable 클래스 안까지 JsonProperty 를 적용시킬 수 있는 방법에 대한 문서입니다.

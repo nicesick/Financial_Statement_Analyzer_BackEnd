@@ -3,6 +3,11 @@ package com.jihun.study.openDartApi.utils.evaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 2021.02.09
+ * IssueEvaluateService 로 분류되었습니다.
+ */
+@Deprecated
 public class CorpEvaluator {
     private static final Logger logger = LoggerFactory.getLogger(CorpEvaluator.class);
 

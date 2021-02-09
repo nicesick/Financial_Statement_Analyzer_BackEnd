@@ -15,6 +15,8 @@ import java.util.List;
 public class IssueEvaluateService implements EvaluateService {
     private static final Logger logger = LoggerFactory.getLogger(IssueEvaluateService.class.getSimpleName());
 
+    private static final String EVALUATE_SERVICE_NAME = "Issue";
+
     private static final char   KOSPI   = 'Y';
     private static final char   KOSDAQ  = 'K';
 
@@ -89,7 +91,7 @@ public class IssueEvaluateService implements EvaluateService {
                     }
                 }
             }
-            ((Corporation) corpInfo).addCorpEval("Issue", issueEvaluation);
+            ((Corporation) corpInfo).addCorpEval(EVALUATE_SERVICE_NAME, issueEvaluation);
         }
     }
 
