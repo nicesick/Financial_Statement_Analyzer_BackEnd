@@ -1,6 +1,6 @@
 package com.jihun.study.openDartApi.entity.stock;
 
-import com.jihun.study.openDartApi.dto.stock.DartDto;
+import com.jihun.study.openDartApi.dto.stock.DartUpdate;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Entity
-public class CorpUpdate implements Serializable, DartDto {
+public class CorpUpdate implements Serializable, DartUpdate {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int     id;

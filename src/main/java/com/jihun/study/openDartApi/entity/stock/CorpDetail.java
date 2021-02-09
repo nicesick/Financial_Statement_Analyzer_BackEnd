@@ -1,25 +1,44 @@
 package com.jihun.study.openDartApi.entity.stock;
 
-import com.jihun.study.openDartApi.dto.stock.DartDto;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.jihun.study.openDartApi.entity.stock.pk.CorpDetailPK;
 
-import javax.persistence.*;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
 import java.io.Serializable;
 
+@JsonAutoDetect(
+          fieldVisibility   = JsonAutoDetect.Visibility.ANY
+        , getterVisibility  = JsonAutoDetect.Visibility.NONE
+        , setterVisibility  = JsonAutoDetect.Visibility.NONE
+        , creatorVisibility = JsonAutoDetect.Visibility.NONE
+)
 @Entity
-public class CorpDetail implements Serializable, DartDto {
+public class CorpDetail implements Serializable {
     @EmbeddedId
+    @JsonUnwrapped
     private CorpDetailPK    corpDetailPK;
+    @JsonProperty("thstrm_dt")
     private String          thstrmDt;
 
+    @JsonProperty("tot_assets")
     private String          totAssets;
+    @JsonProperty("tot_liability")
     private String          totLiability;
+    @JsonProperty("tot_stockholders_equity")
     private String          totStockholdersEquity;
-
+    @JsonProperty("stockholders_equity")
     private String          stockholdersEquity;
 
+    @JsonProperty("revenue")
     private String          revenue;
+    @JsonProperty("operating_income")
     private String          operatingIncome;
+    @JsonProperty("income_before_tax")
     private String          incomeBeforeTax;
+    @JsonProperty("net_income")
     private String          netIncome;
 
 //    @ManyToOne

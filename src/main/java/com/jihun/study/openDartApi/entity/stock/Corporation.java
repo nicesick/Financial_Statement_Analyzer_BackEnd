@@ -1,20 +1,32 @@
 package com.jihun.study.openDartApi.entity.stock;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jihun.study.openDartApi.dto.api.DartApiDto;
+import com.jihun.study.openDartApi.dto.evalute.Evaluation;
 import com.jihun.study.openDartApi.dto.stock.DartDto;
 import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+@JsonAutoDetect(
+          fieldVisibility   = JsonAutoDetect.Visibility.ANY
+        , getterVisibility  = JsonAutoDetect.Visibility.NONE
+        , setterVisibility  = JsonAutoDetect.Visibility.NONE
+        , creatorVisibility = JsonAutoDetect.Visibility.NONE
+)
 @Entity
 public class Corporation implements Serializable, DartDto, DartApiDto {
     @Transient
+    @JsonProperty("status")
     private String status;
     @Transient
+    @JsonProperty("message")
     private String message;
 
     @Id
@@ -58,21 +70,17 @@ public class Corporation implements Serializable, DartDto, DartApiDto {
     @JsonProperty("acc_mt")
     private String accMt;
 
-    private boolean isRevenueLack;
-    private boolean isEquityImpairment;
-    private boolean isOperatingLoss;
-    private boolean isLossBeforeTax;
-
-    @Formula("is_revenue_lack | is_equity_impairment | is_operating_loss | is_loss_before_tax")
-    private boolean isIssued;
-    private boolean isEvalDone = true;
-
     @OneToMany(
             fetch = FetchType.LAZY
             , cascade = CascadeType.ALL
             , mappedBy = "corpDetailPK.corpCode"
     )
+    @JsonProperty("corp_details")
     private List<CorpDetail> corpDetails = new ArrayList<>();
+
+    @Transient
+    @JsonProperty("corp_evals")
+    private Map<String, Evaluation> corpEvals = new HashMap<>();
 
     public Corporation() {
     }
@@ -104,6 +112,20 @@ public class Corporation implements Serializable, DartDto, DartApiDto {
     public void addCorpDetails(List<CorpDetail> corpDetails) {
         for (CorpDetail corpDetail : corpDetails) {
             this.corpDetails.add(corpDetail);
+
+//            if (corpDetail.getCorporation() != this) {
+//                corpDetail.setCorporation(this);
+//            }
+        }
+    }
+
+    public void addCorpEval(String evalName, Evaluation corpEval) {
+        this.corpEvals.put(evalName, corpEval);
+    }
+
+    public void addCorpEvals(Map<String, Evaluation> corpEvals) {
+        for (String corpEvalKey : corpEvals.keySet()) {
+            this.corpEvals.put(corpEvalKey, corpEvals.get(corpEvalKey));
 
 //            if (corpDetail.getCorporation() != this) {
 //                corpDetail.setCorporation(this);
@@ -263,60 +285,20 @@ public class Corporation implements Serializable, DartDto, DartApiDto {
         this.accMt = accMt;
     }
 
-    public boolean isRevenueLack() {
-        return isRevenueLack;
-    }
-
-    public void setRevenueLack(boolean revenueLack) {
-        this.isRevenueLack = revenueLack;
-    }
-
-    public boolean isOperatingLoss() {
-        return isOperatingLoss;
-    }
-
-    public void setOperatingLoss(boolean operatingLoss) {
-        this.isOperatingLoss = operatingLoss;
-    }
-
-    public boolean isLossBeforeTax() {
-        return isLossBeforeTax;
-    }
-
-    public void setLossBeforeTax(boolean lossBeforeTax) {
-        this.isLossBeforeTax = lossBeforeTax;
-    }
-
-    public boolean isEquityImpairment() {
-        return isEquityImpairment;
-    }
-
-    public void setEquityImpairment(boolean equityImpairment) {
-        this.isEquityImpairment = equityImpairment;
-    }
-
-    public boolean isIssued() {
-        return isIssued;
-    }
-
-    public void setIssued(boolean issued) {
-        isIssued = issued;
-    }
-
-    public boolean isEvalDone() {
-        return isEvalDone;
-    }
-
-    public void setEvalDone(boolean evalDone) {
-        this.isEvalDone = evalDone;
-    }
-
     public List<CorpDetail> getCorpDetails() {
         return corpDetails;
     }
 
     public void setCorpDetails(List<CorpDetail> corpDetails) {
         this.corpDetails = corpDetails;
+    }
+
+    public Map<String, Evaluation> getCorpEvals() {
+        return corpEvals;
+    }
+
+    public void setCorpEvals(Map<String, Evaluation> corpEvals) {
+        this.corpEvals = corpEvals;
     }
 
     @Override
@@ -341,13 +323,8 @@ public class Corporation implements Serializable, DartDto, DartApiDto {
                 ", indutyCode='" + indutyCode + '\'' +
                 ", estDt='" + estDt + '\'' +
                 ", accMt='" + accMt + '\'' +
-                ", isRevenueLack=" + isRevenueLack +
-                ", isEquityImpairment=" + isEquityImpairment +
-                ", isOperatingLoss=" + isOperatingLoss +
-                ", isLossBeforeTax=" + isLossBeforeTax +
-                ", isIssued=" + isIssued +
-                ", isEvalDone=" + isEvalDone +
                 ", corpDetails=" + corpDetails +
+                ", corpEvals=" + corpEvals +
                 '}';
     }
 }

@@ -1,76 +1,79 @@
 package com.jihun.study.openDartApi.controller;
 
 import com.jihun.study.openDartApi.dto.stock.DartDto;
-import com.jihun.study.openDartApi.service.keyCount.CountService;
+import com.jihun.study.openDartApi.dto.stock.DartUpdate;
+import com.jihun.study.openDartApi.dtoImpl.stock.DartCorpDto;
+import com.jihun.study.openDartApi.entity.stock.Corporation;
+import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
 import com.jihun.study.openDartApi.service.stock.StockService;
+import com.jihun.study.openDartApi.serviceImpl.evaluate.IssueEvaluateService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api")
 public class StockController {
-    private StockService stockService;
-    private CountService countService;
+    private StockService            stockService;
+    private List<EvaluateService>   evaluateServices;
 
     @Autowired
-    public StockController(StockService stockService, CountService countService) {
-        this.stockService = stockService;
-        this.countService = countService;
+    public StockController(
+                StockService stockService
+                , @Qualifier("IssueEvaluateService") EvaluateService issueEvaluateService
+    ) {
+        this.stockService       = stockService;
+        this.evaluateServices   = new ArrayList<>();
+
+        this.evaluateServices.add(issueEvaluateService);
     }
-
-//    @RequestMapping("/dto")
-//    public CorpDetail dtoTest() {
-//        CorpDetail corpDetail = new CorpDetail();
-//
-//        System.out.println("corpDetail = " + corpDetail.toString());
-//        return corpDetail;
-//    }
-
-//    @RequestMapping("/count")
-//    public synchronized int count() {
-//        int result  = countService.isCountOver(LocalDate.now(), LocalTime.now().withSecond(0));
-//        int count   = countService.addCount(LocalDate.now(), LocalTime.now().withSecond(0));
-//
-//        return count;
-//    }
 
     @GetMapping("/search")
     public ResponseEntity<List<DartDto>> getCorpInfo(
-              @Nullable Boolean     isEvalDone
-            , @Nullable Boolean     isIssued
-            , @Nullable Character   corpCls
+              @Nullable Character   corpCls
             , @Nullable String      corpName
     ) {
-        ResponseEntity<List<DartDto>> output = stockService.getCorpInfos(isEvalDone, isIssued, corpCls, corpName);
+        ResponseEntity<List<DartDto>> output = stockService.getCorpInfos(corpCls, corpName);
+
+        if (output.getStatusCodeValue() == 200
+            && output.getBody().size() > 0
+        ) {
+            for (EvaluateService evaluateService : evaluateServices) {
+                for (DartDto corpInfo : output.getBody()) {
+                    evaluateService.evaluate(corpInfo);
+                }
+            }
+        }
         return output;
     }
 
     @GetMapping("/search/{corpCode}")
     public ResponseEntity<DartDto> getCorpDetail(@PathVariable String corpCode) {
         ResponseEntity<DartDto> output = stockService.getCorpDetail(corpCode);
+
+        if (output.getStatusCodeValue() == 200) {
+            for (EvaluateService evaluateService : evaluateServices) {
+                evaluateService.evaluate(output.getBody());
+            }
+        }
         return output;
     }
 
     @GetMapping("/update")
-    public ResponseEntity<DartDto> getUpdate() {
-        ResponseEntity<DartDto> output = stockService.getUpdate();
+    public ResponseEntity<DartUpdate> getUpdate() {
+        ResponseEntity<DartUpdate> output = stockService.getUpdate();
         return output;
     }
 
     @PostMapping("/update")
-    public ResponseEntity<DartDto> postUpdate() {
-        ResponseEntity<DartDto> output = stockService.update();
-        return output;
-    }
-
-    @RequestMapping("/test/update")
-    public ResponseEntity<DartDto> testUpdate() {
-        ResponseEntity<DartDto> output = stockService.update();
+    public ResponseEntity<DartUpdate> postUpdate() {
+        ResponseEntity<DartUpdate> output = stockService.update();
         return output;
     }
 }

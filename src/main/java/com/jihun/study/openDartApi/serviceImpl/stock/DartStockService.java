@@ -1,16 +1,16 @@
 package com.jihun.study.openDartApi.serviceImpl.stock;
 
 import com.jihun.study.openDartApi.dto.stock.DartDto;
+import com.jihun.study.openDartApi.dto.stock.DartUpdate;
 import com.jihun.study.openDartApi.dtoImpl.api.DartApiDetailDto;
 import com.jihun.study.openDartApi.dtoImpl.api.DartApiResponseDto;
-import com.jihun.study.openDartApi.dtoImpl.stock.DartCorpDto;
 import com.jihun.study.openDartApi.entity.stock.CorpDetail;
 import com.jihun.study.openDartApi.entity.stock.CorpUpdate;
 import com.jihun.study.openDartApi.entity.stock.Corporation;
-import com.jihun.study.openDartApi.repository.stock.CorpDetailRepository;
 import com.jihun.study.openDartApi.repository.stock.CorpUpdateRepository;
 import com.jihun.study.openDartApi.repository.stock.CorporationRepository;
 import com.jihun.study.openDartApi.service.api.ApiService;
+import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
 import com.jihun.study.openDartApi.service.keyCount.KeyService;
 import com.jihun.study.openDartApi.service.stock.StockService;
 import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
@@ -40,15 +40,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class DartStockService implements StockService {
-    private Logger logger = LoggerFactory.getLogger(this.getClass().getSimpleName());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
-    private CorporationRepository   corporationRepository;
-    private CorpDetailRepository    corpDetailRepository;
-    private CorpUpdateRepository    corpUpdateRepository;
-    private KeyService              dartKeyCountService;
+    private final CorporationRepository   corporationRepository;
+//    private final CorpDetailRepository    corpDetailRepository;
+    private final CorpUpdateRepository    corpUpdateRepository;
+    private final KeyService              dartKeyCountService;
 
-    private ApiService dartJsonService;
-    private ApiService dartZipService;
+    private final ApiService dartJsonService;
+    private final ApiService dartZipService;
 
 //    private final String DART_KEY;
     private final String CORP_CODE_URI;
@@ -70,14 +70,14 @@ public class DartStockService implements StockService {
     public DartStockService(
             Environment environment
             , CorporationRepository         corporationRepository
-            , CorpDetailRepository          corpDetailRepository
+//            , CorpDetailRepository          corpDetailRepository
             , CorpUpdateRepository          corpUpdateRepository
             , KeyService                    dartKeyCountService
             , @Qualifier("DartJsonService") ApiService dartJsonService
             , @Qualifier("DartZipService")  ApiService dartZipService
     ) {
         this.corporationRepository  = corporationRepository;
-        this.corpDetailRepository   = corpDetailRepository;
+//        this.corpDetailRepository   = corpDetailRepository;
         this.corpUpdateRepository   = corpUpdateRepository;
         this.dartKeyCountService    = dartKeyCountService;
 
@@ -92,36 +92,22 @@ public class DartStockService implements StockService {
 
     @Override
     public ResponseEntity<List<DartDto>> getCorpInfos(
-              @Nullable Boolean     isEvalDone
-            , @Nullable Boolean     isIssued
-            , @Nullable Character   corpCls
+              @Nullable Character   corpCls
             , @Nullable String      corpName
     ) {
-//        System.out.println("isEvalDone  = " + isEvalDone);
-//        System.out.println("isIssued    = " + isIssued);
-//        System.out.println("corpCls     = " + corpCls);
-
-        if (isEvalDone == null || isIssued == null || corpCls == null) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        if (corpCls == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        List<Corporation> results = null;
+        List<Corporation> output = null;
 
-        if (corpName == null) {
-            results = corporationRepository.findAllByIsEvalDoneAndIsIssuedAndCorpCls(isEvalDone, isIssued, corpCls);
+        if (corpName == null || "".equals(corpName)) {
+            output = corporationRepository.findAllByCorpCls(corpCls);
         } else {
-            results = corporationRepository.findAllByIsEvalDoneAndIsIssuedAndCorpClsAndCorpNameContaining(isEvalDone, isIssued, corpCls, corpName);
+            output = corporationRepository.findAllByCorpClsAndCorpNameContaining(corpCls, corpName);
         }
 
-        List<DartCorpDto> corporations = new ArrayList<>();
-
-        for (Corporation result : results) {
-            DartCorpDto corpDto = new DartCorpDto(result.getCorpCode(), result.getCorpName(), result.getCorpCls());
-
-            corporations.add(corpDto);
-        }
-
-        return new ResponseEntity(corporations, HttpStatus.OK);
+        return new ResponseEntity(output, HttpStatus.OK);
     }
 
     @Override
@@ -133,14 +119,14 @@ public class DartStockService implements StockService {
         Optional<Corporation> corporation = corporationRepository.findById(corpCode);
 
         if (corporation.isPresent()) {
-            return new ResponseEntity(corporation, HttpStatus.OK);
+            return new ResponseEntity(corporation.get(), HttpStatus.OK);
         } else {
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
     }
 
     @Override
-    public ResponseEntity<DartDto> getUpdate() {
+    public ResponseEntity<DartUpdate> getUpdate() {
         Optional<CorpUpdate> corpUpdate = corpUpdateRepository.findTopByProgressNotOrderByIdDesc("failed");
 
         if (corpUpdate.isPresent()) {
@@ -151,7 +137,7 @@ public class DartStockService implements StockService {
     }
 
     @Override
-    public ResponseEntity<DartDto> update() {
+    public ResponseEntity<DartUpdate> update() {
         Optional<CorpUpdate> beforeStartCheckCorpUpdate = corpUpdateRepository.findTopByOrderByIdDesc();
 
         if (beforeStartCheckCorpUpdate.isPresent()) {
@@ -165,7 +151,6 @@ public class DartStockService implements StockService {
 
         String progress = "success";
         try {
-//            Thread.sleep(60000);
             progressUpdating();
         } catch (Exception e) {
             progress = "failed";
@@ -189,48 +174,47 @@ public class DartStockService implements StockService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void progressUpdating() throws LimitExceededException, InterruptedException, IOException, IllegalAccessException, InvocationTargetException, JDOMException, NoSuchMethodException {
-        List<Corporation>               corpKeys    = null;
-        Map<String, List<CorpDetail>>   corpDetails = null;
+        List<Corporation>               corpKeys;
+        Map<String, List<CorpDetail>>   corpDetails;
+        List<Corporation>               corpInfos;
 
-        List<Corporation>               corpInfos   = null;
-
-//        /**
-//         * Testing Code
-//         *
-//         * 삼성전자 - 00126380
-//         * 셀트리온 - 00421045
-//         * HMM - 00164645
-//         * 박셀바이오 - 01335851
-//         * 현대차증권 - 00137997
-//         * LG전자 - 00401731
-//         * 셀리버리 - 01182444
-//         * 셀트리온헬스케어 - 00554024
-//         * 기아자동차 - 00106641
-//         * SK하이닉스 - 00164779
-//         * NAVER - 00266961
-//         * 삼성바이오로직스 - 00877059
-//         * 삼성SDI - 00126362
-//         * 카카오 - 00918444
-//         * 현대모비스 - 00164788
-//         * SK이노베이션 - 00631518
-//         * 삼성물산 - 00149655
-//         * LG생활건강 - 00356370
-//         * 엔씨소프트 - 00261443
-//         * SK텔레콤 - 00159023
-//         * LG디스플레이 - 00105873
-//         * KB금융 - 00688996
-//         * 신한지주 - 00382199
-//         * 삼성에스디에스 - 00126186
-//         * 삼성전기 - 00126371
-//         * 한국전력공사 - 00159193
-//         * 아모레퍼시픽 - 00583424
-//         * 넷마블 - 00441854
-//         * 케이티앤지 - 00244455
-//         * 하나금융지주 - 00547583
-//         * 한온시스템 - 00161125
-//         * 포스코케미칼 - 00155276
-//         * 금호석유화학 - 00106368
-//         */
+        /*
+         * Testing Code
+         *
+         * 삼성전자 - 00126380
+         * 셀트리온 - 00421045
+         * HMM - 00164645
+         * 박셀바이오 - 01335851
+         * 현대차증권 - 00137997
+         * LG전자 - 00401731
+         * 셀리버리 - 01182444
+         * 셀트리온헬스케어 - 00554024
+         * 기아자동차 - 00106641
+         * SK하이닉스 - 00164779
+         * NAVER - 00266961
+         * 삼성바이오로직스 - 00877059
+         * 삼성SDI - 00126362
+         * 카카오 - 00918444
+         * 현대모비스 - 00164788
+         * SK이노베이션 - 00631518
+         * 삼성물산 - 00149655
+         * LG생활건강 - 00356370
+         * 엔씨소프트 - 00261443
+         * SK텔레콤 - 00159023
+         * LG디스플레이 - 00105873
+         * KB금융 - 00688996
+         * 신한지주 - 00382199
+         * 삼성에스디에스 - 00126186
+         * 삼성전기 - 00126371
+         * 한국전력공사 - 00159193
+         * 아모레퍼시픽 - 00583424
+         * 넷마블 - 00441854
+         * 케이티앤지 - 00244455
+         * 하나금융지주 - 00547583
+         * 한온시스템 - 00161125
+         * 포스코케미칼 - 00155276
+         * 금호석유화학 - 00106368
+         */
 //        List<Map<String, String>>   corpKeysForTest     = new ArrayList<>();
 //        String[]                    corpKeysSample      = {
 //                 "00126380"
@@ -275,8 +259,7 @@ public class DartStockService implements StockService {
 //        }
 
         try {
-//            corpKeys    = corpKeysForTest;
-            /**
+            /*
              * 2021.02.03
              *
              * API 호출 횟수를 줄이기 위해
@@ -284,6 +267,7 @@ public class DartStockService implements StockService {
              * corpKeys -> corpInfos    -> corpDetails 순서가
              * corpKeys -> corpDetails  -> corpInfos 순서로 변경되었습니다.
              */
+//            corpKeys    = corpKeysForTest;
             corpKeys    = getCorpKeys();
             corpDetails = getCorpDetails(corpKeys);
             corpInfos   = addCorpDetails(corpKeys, corpDetails);
@@ -323,9 +307,14 @@ public class DartStockService implements StockService {
      * 평가한 결과는 Corporation Entity 에 저장됩니다.
      * 만약 평가할 수 없다면, Corportation Entity 의 Stat_eval_done 변수가 false 로 변경됩니다.
      *
+     * 2021.02.09
+     *
+     * IssueEvaluateService 로 분리되었습니다.
+     *
      * @param oldCorpInfos
      * @param corpDetails
      */
+    @Deprecated
     private List<Corporation> evalCorporation(final List<Corporation> oldCorpInfos, final Map<String, List<CorpDetail>> corpDetails) {
         List<Corporation> corpInfos = new CopyOnWriteArrayList<>(oldCorpInfos);
 
@@ -358,21 +347,21 @@ public class DartStockService implements StockService {
                     || incomeBeforeTexes[index] == null
                     || operatingIncomes[index]  == null
                 ) {
-                    corpInfo.setEvalDone(false);
+//                    corpInfo.setEvalDone(false);
                     break;
                 }
             }
 
-            if (corpInfo.isEvalDone()) {
-                try {
-                    corpInfo.setRevenueLack(CorpEvaluator.isRevenueLack(corpInfo.getCorpCode(), corpInfo.getCorpCls(), revenues));
-                    corpInfo.setEquityImpairment(CorpEvaluator.isEquityImpairment(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, equities));
-                    corpInfo.setOperatingLoss(CorpEvaluator.isOperatingLoss(corpInfo.getCorpCode(), corpInfo.getCorpCls(), operatingIncomes));
-                    corpInfo.setLossBeforeTax(CorpEvaluator.isLossBeforeTax(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, incomeBeforeTexes));
-                } catch (NumberFormatException e) {
-                    corpInfo.setEvalDone(false);
-                }
-            }
+//            if (corpInfo.isEvalDone()) {
+//                try {
+//                    corpInfo.setRevenueLack(CorpEvaluator.isRevenueLack(corpInfo.getCorpCode(), corpInfo.getCorpCls(), revenues));
+//                    corpInfo.setEquityImpairment(CorpEvaluator.isEquityImpairment(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, equities));
+//                    corpInfo.setOperatingLoss(CorpEvaluator.isOperatingLoss(corpInfo.getCorpCode(), corpInfo.getCorpCls(), operatingIncomes));
+//                    corpInfo.setLossBeforeTax(CorpEvaluator.isLossBeforeTax(corpInfo.getCorpCode(), corpInfo.getCorpCls(), tot_equities, incomeBeforeTexes));
+//                } catch (NumberFormatException e) {
+//                    corpInfo.setEvalDone(false);
+//                }
+//            }
         }
 
         logger.debug("evalCorporation : corpInfos = " + corpInfos.toString());
@@ -449,7 +438,7 @@ public class DartStockService implements StockService {
      * }
      *
      * @param corpInfos
-     * @return
+     * @return 기업당 재무제표 리스트
      *
      * @throws LimitExceededException
      * @throws InterruptedException
@@ -527,9 +516,8 @@ public class DartStockService implements StockService {
      * @return 고유번호 문자열
      */
     private String joinCorpKeys(final List<Corporation> corpInfos, int fromIdx, int toIdx) {
-        if (fromIdx < 0             || fromIdx >= corpInfos.size()
-            || fromIdx >= toIdx     || toIdx <= fromIdx
-            || toIdx < 0
+        if (toIdx < 0                       || fromIdx < 0
+            || fromIdx >= corpInfos.size()  || toIdx <= fromIdx
         ) {
             return "";
         } else if (toIdx >= corpInfos.size()) {
@@ -565,7 +553,7 @@ public class DartStockService implements StockService {
         List<DartApiDetailDto> dartApiDetailDtos = dartApiResponseDto.getList();
 
         for (DartApiDetailDto dartApiDetailDto : dartApiDetailDtos) {
-            /**
+            /*
              * DartDetailDto 값 추출은
              * 재무제표의 자산총계, 부채총계, 자본총계, 자본금, 매출액, 영업이익, 법인세차감전 순이익, 당기순이익을 대상으로 합니다.
              */
@@ -573,7 +561,7 @@ public class DartStockService implements StockService {
 //                "CFS".equals(dartDetailDto.getFs_div()) &&
                 DETAIL_MAPPER.containsKey(dartApiDetailDto.getAccount_nm())
             ) {
-                /**
+                /*
                  * input 에서 corp_code, bsns_year, reprt_code 값이 동일한 CorpDetail 을 추출합니다.
                  * 없다면 새로 생성하여 추가합니다.
                  */
@@ -604,9 +592,8 @@ public class DartStockService implements StockService {
                     corpDetails.add(targetCorpDetail);
                 }
 
-                /**
+                /*
                  * 해당 변수에 값을 넣어줍니다.
-                 *
                  * 연결재무제표 값이 우선시 되며, 만약 연결재무제표가 없다면 재무제표 값이 들어갑니다.
                  */
                 Class   targetClass     = targetCorpDetail.getClass();
@@ -621,7 +608,7 @@ public class DartStockService implements StockService {
                     }
                 }
 
-                if (targetSetMethod == null || targetGetMethod == null) {
+                if (targetSetMethod == null) {
                     throw new NoSuchMethodException();
                 }
 
@@ -696,11 +683,11 @@ public class DartStockService implements StockService {
                     + corpInfos.size());
 //            logger.debug("corpInfo = " + response.getBody().toString());
 
-            /**
-             * status 000 - 정상
+            /*
+             * status   000 - 정상
              *
-             * corp_cls Y - 유가증권
-             * corp_cls K - 코스닥
+             * corp_cls Y   - 유가증권
+             * corp_cls K   - 코스닥
              */
             if ("000".equals(response.getBody().getStatus())
                 && ('Y' == response.getBody().getCorpCls()

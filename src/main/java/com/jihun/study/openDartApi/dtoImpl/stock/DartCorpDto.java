@@ -1,13 +1,18 @@
 package com.jihun.study.openDartApi.dtoImpl.stock;
 
+import com.jihun.study.openDartApi.dto.evalute.Evaluation;
 import com.jihun.study.openDartApi.dto.stock.DartDto;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DartCorpDto implements Serializable, DartDto {
     private String  corpCode;
     private String  corpName;
     private char    corpCls;
+
+    private Map<String, Evaluation> corpEvals = new HashMap<>();
 
     public DartCorpDto() {
     }
@@ -16,6 +21,20 @@ public class DartCorpDto implements Serializable, DartDto {
         this.corpCode = corpCode;
         this.corpName = corpName;
         this.corpCls = corpCls;
+    }
+
+    public void addCorpEval(String evalKey, Evaluation corpEval) {
+        this.corpEvals.put(evalKey, corpEval);
+    }
+
+    public void addCorpEvals(Map<String, Evaluation> corpEvals) {
+        for (String evalKey : corpEvals.keySet()) {
+            this.corpEvals.put(evalKey, corpEvals.get(evalKey));
+
+//            if (corpDetail.getCorporation() != this) {
+//                corpDetail.setCorporation(this);
+//            }
+        }
     }
 
     public String getCorpCode() {

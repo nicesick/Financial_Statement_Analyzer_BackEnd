@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public interface CorporationRepository extends CrudRepository<Corporation, String> {
-    Stream<Corporation> findAllByIsEvalDone(boolean isEvalDone);
-    Stream<Corporation> findAllByIsIssued(boolean isIssued);
-    Stream<Corporation> findAllByCorpCls(char corpCls);
-    Stream<Corporation> findAllByCorpNameLike(String corpName);
+    List<Corporation> findAllByCorpCls(char corpCls);
+    List<Corporation> findAllByCorpClsAndCorpNameContaining(char corpCls, String corpName);
 
-    List<Corporation> findAllByIsEvalDoneAndIsIssuedAndCorpCls(boolean isEvalDone, boolean isIssued, char corpCls);
-    List<Corporation> findAllByIsEvalDoneAndIsIssuedAndCorpClsAndCorpNameContaining(boolean isEvalDone, boolean isIssued, char corpCls, String corpName);
+//    Stream<Corporation> findAllByIsEvalDone(boolean isEvalDone);
+//    Stream<Corporation> findAllByIsIssued(boolean isIssued);
+//    Stream<Corporation> findAllByCorpCls(char corpCls);
+//    Stream<Corporation> findAllByCorpNameLike(String corpName);
+//    List<Corporation> findAllByIsEvalDoneAndIsIssuedAndCorpCls(boolean isEvalDone, boolean isIssued, char corpCls);
+//    List<Corporation> findAllByIsEvalDoneAndIsIssuedAndCorpClsAndCorpNameContaining(boolean isEvalDone, boolean isIssued, char corpCls, String corpName);
 }
