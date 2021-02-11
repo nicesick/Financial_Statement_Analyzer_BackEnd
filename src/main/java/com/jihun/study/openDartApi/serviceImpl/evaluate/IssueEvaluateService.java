@@ -15,7 +15,8 @@ import java.util.List;
 public class IssueEvaluateService implements EvaluateService {
     private static final Logger logger = LoggerFactory.getLogger(IssueEvaluateService.class.getSimpleName());
 
-    private static final String EVALUATE_SERVICE_NAME = "Issue";
+    private static final String     EVALUATE_SERVICE_NAME   = "issue";
+    private static final boolean    IS_SORTABLE             = false;
 
     private static final char   KOSPI   = 'Y';
     private static final char   KOSDAQ  = 'K';
@@ -93,6 +94,16 @@ public class IssueEvaluateService implements EvaluateService {
             }
             ((Corporation) corpInfo).addCorpEval(EVALUATE_SERVICE_NAME, issueEvaluation);
         }
+    }
+
+    @Override
+    public String getServiceName() {
+        return EVALUATE_SERVICE_NAME;
+    }
+
+    @Override
+    public boolean isSortable() {
+        return IS_SORTABLE;
     }
 
     /**

@@ -9,6 +9,7 @@ import com.jihun.study.openDartApi.service.stock.StockService;
 import com.jihun.study.openDartApi.serviceImpl.evaluate.IssueEvaluateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
@@ -75,5 +76,18 @@ public class StockController {
     public ResponseEntity<DartUpdate> postUpdate() {
         ResponseEntity<DartUpdate> output = stockService.update();
         return output;
+    }
+
+    @GetMapping("/evaluator")
+    public ResponseEntity<List<String>> getEvaluators() {
+        List<String> evaluators = new ArrayList<>();
+
+        for (EvaluateService evaluateService : evaluateServices) {
+            if (evaluateService.isSortable()) {
+                evaluators.add(evaluateService.getServiceName());
+            }
+        }
+
+        return new ResponseEntity<>(evaluators, HttpStatus.OK);
     }
 }
