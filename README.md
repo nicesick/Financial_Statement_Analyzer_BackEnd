@@ -9,6 +9,8 @@
 >  2021-02-05 : file structure 변경 : interface 부분도 패키지를 분류하였습니다.
 >
 >  2021-02-09 : Evaluation 부분을 Utils 에서 EvaluationService 로 분류하였습니다.
+>
+>  2021-02-14 : Evaluation 에 Sortable 인터페이스를 추가하여, Sort 가능한 평가에 대해서 정렬기능을 추가하였습니다.
 
 
 

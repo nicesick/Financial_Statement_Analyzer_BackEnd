@@ -5,6 +5,7 @@ import com.jihun.study.openDartApi.dto.stock.DartUpdate;
 import com.jihun.study.openDartApi.dtoImpl.stock.DartCorpDto;
 import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
+import com.jihun.study.openDartApi.service.evaluate.SortableService;
 import com.jihun.study.openDartApi.service.stock.StockService;
 import com.jihun.study.openDartApi.serviceImpl.evaluate.IssueEvaluateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -28,17 +30,20 @@ public class StockController {
     public StockController(
                 StockService stockService
                 , @Qualifier("IssueEvaluateService") EvaluateService issueEvaluateService
+                , @Qualifier("OperatingIncomeGrowthRatioEvaluationService") EvaluateService operatingIncomeGrowthRatioEvaluationService
     ) {
         this.stockService       = stockService;
         this.evaluateServices   = new ArrayList<>();
 
         this.evaluateServices.add(issueEvaluateService);
+        this.evaluateServices.add(operatingIncomeGrowthRatioEvaluationService);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<DartDto>> getCorpInfo(
               @Nullable Character   corpCls
             , @Nullable String      corpName
+            , @Nullable String      sortByService
     ) {
         ResponseEntity<List<DartDto>> output = stockService.getCorpInfos(corpCls, corpName);
 
@@ -48,6 +53,13 @@ public class StockController {
             for (EvaluateService evaluateService : evaluateServices) {
                 for (DartDto corpInfo : output.getBody()) {
                     evaluateService.evaluate(corpInfo);
+                }
+
+                if (evaluateService.getServiceName().equals(sortByService)
+                    && evaluateService instanceof SortableService
+                ) {
+                    Collections.sort(output.getBody(), ((SortableService) evaluateService).getComparator());
+                    System.out.println("output.getBody().toString() = " + output.getBody().toString());
                 }
             }
         }
@@ -83,7 +95,7 @@ public class StockController {
         List<String> evaluators = new ArrayList<>();
 
         for (EvaluateService evaluateService : evaluateServices) {
-            if (evaluateService.isSortable()) {
+            if (evaluateService instanceof SortableService) {
                 evaluators.add(evaluateService.getServiceName());
             }
         }
