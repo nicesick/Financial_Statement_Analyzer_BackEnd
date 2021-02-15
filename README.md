@@ -11,6 +11,8 @@
 >  2021-02-09 : Evaluation 부분을 Utils 에서 EvaluationService 로 분류하였습니다.
 >
 >  2021-02-14 : Evaluation 에 Sortable 인터페이스를 추가하여, Sort 가능한 평가에 대해서 정렬기능을 추가하였습니다.
+>
+>  2021-02-15 : OperatingIncomeGrowthRatioEvaluationService 를 추가하여, 영업이익 상승률에 따라 기업목록을 Sort 할 수 있도록 추가하였습니다.
 
 
 

@@ -59,7 +59,6 @@ public class StockController {
                     && evaluateService instanceof SortableService
                 ) {
                     Collections.sort(output.getBody(), ((SortableService) evaluateService).getComparator());
-                    System.out.println("output.getBody().toString() = " + output.getBody().toString());
                 }
             }
         }

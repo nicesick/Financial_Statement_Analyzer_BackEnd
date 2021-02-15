@@ -23,6 +23,12 @@ public class OperatingIncomeGrowthRatioEvaluation implements Serializable, Evalu
     @JsonProperty("operating_income_growth_ratio")
     private float operatingIncomeGrowthRatio;
 
+    @JsonProperty("is_keep_operating_income_positive")
+    private boolean isKeepOperatingIncomePositive;
+
+    @JsonProperty("is_keep_operating_income_growth_ratio_positive")
+    private boolean isKeepOperatingIncomeGrowthRatioPositive;
+
     public OperatingIncomeGrowthRatioEvaluation() {
     }
 
@@ -54,12 +60,30 @@ public class OperatingIncomeGrowthRatioEvaluation implements Serializable, Evalu
         this.operatingIncomeGrowthRatio = operatingIncomeGrowthRatio;
     }
 
+    public boolean isKeepOperatingIncomePositive() {
+        return isKeepOperatingIncomePositive;
+    }
+
+    public void setKeepOperatingIncomePositive(boolean keepOperatingIncomePositive) {
+        isKeepOperatingIncomePositive = keepOperatingIncomePositive;
+    }
+
+    public boolean isKeepOperatingIncomeGrowthRatioPositive() {
+        return isKeepOperatingIncomeGrowthRatioPositive;
+    }
+
+    public void setKeepOperatingIncomeGrowthRatioPositive(boolean keepOperatingIncomeGrowthRatioPositive) {
+        isKeepOperatingIncomeGrowthRatioPositive = keepOperatingIncomeGrowthRatioPositive;
+    }
+
     @Override
     public String toString() {
         return "OperatingIncomeGrowthRatioEvaluation{" +
                 "corpCode='" + corpCode + '\'' +
                 ", isEvalDone=" + isEvalDone +
                 ", operatingIncomeGrowthRatio=" + operatingIncomeGrowthRatio +
+                ", isKeepOperatingIncomePositive=" + isKeepOperatingIncomePositive +
+                ", isKeepOperatingIncomeGrowthRatioPositive=" + isKeepOperatingIncomeGrowthRatioPositive +
                 '}';
     }
 }
