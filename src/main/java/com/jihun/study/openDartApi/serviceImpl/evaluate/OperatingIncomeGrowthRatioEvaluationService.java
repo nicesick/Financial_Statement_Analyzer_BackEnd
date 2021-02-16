@@ -20,6 +20,7 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
     private static final Logger logger = LoggerFactory.getLogger(OperatingIncomeGrowthRatioEvaluationService.class.getSimpleName());
 
     private static final String                     EVALUATE_SERVICE_NAME   = "operatingIncomeGrowthRatio";
+    private static final String                     EVALUATE_SIMPLE_NAME    = "영업이익성장률평가";
     private static final Comparator<Corporation>    EVALUATE_COMPARATOR     = new Comparator<Corporation>() {
         @Override
         public int compare(Corporation comp1, Corporation comp2) {
@@ -194,6 +195,11 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
     @Override
     public String getServiceName() {
         return EVALUATE_SERVICE_NAME;
+    }
+
+    @Override
+    public String getSimpleName() {
+        return EVALUATE_SIMPLE_NAME;
     }
 
     @Override

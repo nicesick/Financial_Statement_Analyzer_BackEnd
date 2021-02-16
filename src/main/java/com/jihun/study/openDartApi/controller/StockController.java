@@ -15,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @CrossOrigin
@@ -77,6 +75,24 @@ public class StockController {
         return output;
     }
 
+    @GetMapping("search/evaluator")
+    public ResponseEntity<List<Map<String, String>>> getEvaluators() {
+        List<Map<String, String>> evaluators = new ArrayList<>();
+
+        for (EvaluateService evaluateService : evaluateServices) {
+            if (evaluateService instanceof SortableService) {
+                evaluators.add(new HashMap<String, String>() {
+                    {
+                        put("name"  , evaluateService.getSimpleName());
+                        put("value" , evaluateService.getServiceName());
+                    }
+                });
+            }
+        }
+
+        return new ResponseEntity<>(evaluators, HttpStatus.OK);
+    }
+
     @GetMapping("/update")
     public ResponseEntity<DartUpdate> getUpdate() {
         ResponseEntity<DartUpdate> output = stockService.getUpdate();
@@ -87,18 +103,5 @@ public class StockController {
     public ResponseEntity<DartUpdate> postUpdate() {
         ResponseEntity<DartUpdate> output = stockService.update();
         return output;
-    }
-
-    @GetMapping("/evaluator")
-    public ResponseEntity<List<String>> getEvaluators() {
-        List<String> evaluators = new ArrayList<>();
-
-        for (EvaluateService evaluateService : evaluateServices) {
-            if (evaluateService instanceof SortableService) {
-                evaluators.add(evaluateService.getServiceName());
-            }
-        }
-
-        return new ResponseEntity<>(evaluators, HttpStatus.OK);
     }
 }

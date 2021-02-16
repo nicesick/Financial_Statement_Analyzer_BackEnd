@@ -15,7 +15,8 @@ import java.util.List;
 public class IssueEvaluateService implements EvaluateService {
     private static final Logger logger = LoggerFactory.getLogger(IssueEvaluateService.class.getSimpleName());
 
-    private static final String EVALUATE_SERVICE_NAME = "issue";
+    private static final String EVALUATE_SERVICE_NAME   = "issue";
+    private static final String EVALUATE_SIMPLE_NAME    = "관리종목평가";
 
     private static final char   KOSPI   = 'Y';
     private static final char   KOSDAQ  = 'K';
@@ -98,6 +99,11 @@ public class IssueEvaluateService implements EvaluateService {
     @Override
     public String getServiceName() {
         return EVALUATE_SERVICE_NAME;
+    }
+
+    @Override
+    public String getSimpleName() {
+        return EVALUATE_SIMPLE_NAME;
     }
 
     /**
