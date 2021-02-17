@@ -132,7 +132,7 @@ public class DartStockService implements StockService {
         if (corpUpdate.isPresent()) {
             return new ResponseEntity(corpUpdate.get(), HttpStatus.OK);
         } else {
-            return new ResponseEntity(HttpStatus.OK);
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
         }
     }
 
