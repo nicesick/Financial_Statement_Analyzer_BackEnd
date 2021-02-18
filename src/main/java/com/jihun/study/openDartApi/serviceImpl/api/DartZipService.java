@@ -7,6 +7,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 @Service("DartZipService")
@@ -33,6 +35,7 @@ public class DartZipService implements ApiService<byte[]> {
         return callApiEndpoint(url, HttpMethod.POST, httpHeaders, body, clazz);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private ResponseEntity<byte[]> callApiEndpoint(String url, HttpMethod httpMethod, HttpHeaders httpHeaders, Object body, Class<byte[]> clazz) {
         ResponseEntity<byte[]> response = restTemplate.exchange(url, httpMethod, new HttpEntity<>(body, httpHeaders), clazz);
         return response;

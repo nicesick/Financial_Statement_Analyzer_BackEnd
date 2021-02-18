@@ -75,7 +75,13 @@ public class StockController {
         return output;
     }
 
-    @GetMapping("search/evaluator")
+    @GetMapping("/search/corpCls")
+    public ResponseEntity<List<String>> getCorpClses() {
+        ResponseEntity<List<String>> output = stockService.getCorpClses();
+        return output;
+    }
+
+    @GetMapping("/search/evaluator")
     public ResponseEntity<List<Map<String, String>>> getEvaluators() {
         List<Map<String, String>> evaluators = new ArrayList<>();
 

@@ -2,16 +2,22 @@ package com.jihun.study.openDartApi.serviceImpl.api;
 
 import com.jihun.study.openDartApi.dto.api.DartApiDto;
 import com.jihun.study.openDartApi.service.api.ApiService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 @Service("DartJsonService")
 public class DartJsonService implements ApiService<DartApiDto> {
+    private static final Logger logger = LoggerFactory.getLogger(DartJsonService.class.getSimpleName());
+
     private RestTemplate restTemplate;
 
     @Autowired
@@ -35,6 +41,7 @@ public class DartJsonService implements ApiService<DartApiDto> {
         return callApiEndpoint(url, HttpMethod.POST, httpHeaders, body, clazz);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private ResponseEntity<DartApiDto> callApiEndpoint(String url, HttpMethod httpMethod, HttpHeaders httpHeaders, Object body, Class<DartApiDto> clazz) {
         ResponseEntity<DartApiDto> response = restTemplate.exchange(url, httpMethod, new HttpEntity<>(body, httpHeaders), clazz);
 
@@ -44,8 +51,8 @@ public class DartJsonService implements ApiService<DartApiDto> {
         ) {
             return response;
         } else {
-            System.out.println("response.getBody().getStatus() = " + response.getBody().getStatus());
-            System.out.println("response.getBody().getMessage() = " + response.getBody().getMessage());
+            logger.debug("response.getBody().getStatus() = " + response.getBody().getStatus());
+            logger.debug("response.getBody().getMessage() = " + response.getBody().getMessage());
 
             throw new IllegalStateException();
         }

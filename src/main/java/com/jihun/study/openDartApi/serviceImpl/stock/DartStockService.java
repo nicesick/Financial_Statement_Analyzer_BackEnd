@@ -101,10 +101,18 @@ public class DartStockService implements StockService {
 
         List<Corporation> output = null;
 
-        if (corpName == null || "".equals(corpName)) {
-            output = corporationRepository.findAllByCorpCls(corpCls);
+        if (corpCls != 'A') {
+            if (corpName == null || "".equals(corpName)) {
+                output = corporationRepository.findAllByCorpCls(corpCls);
+            } else {
+                output = corporationRepository.findAllByCorpClsAndCorpNameContaining(corpCls, corpName);
+            }
         } else {
-            output = corporationRepository.findAllByCorpClsAndCorpNameContaining(corpCls, corpName);
+            if (corpName == null || "".equals(corpName)) {
+                output = corporationRepository.findAll();
+            } else {
+                output = corporationRepository.findAllByCorpNameContaining(corpName);
+            }
         }
 
         return new ResponseEntity(output, HttpStatus.OK);
@@ -123,6 +131,12 @@ public class DartStockService implements StockService {
         } else {
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @Override
+    public ResponseEntity<List<String>> getCorpClses() {
+        List<String> corpClses = corporationRepository.findDistinctCorpCls();
+        return new ResponseEntity(corpClses, HttpStatus.OK);
     }
 
     @Override
@@ -215,8 +229,8 @@ public class DartStockService implements StockService {
          * 포스코케미칼 - 00155276
          * 금호석유화학 - 00106368
          */
-//        List<Map<String, String>>   corpKeysForTest     = new ArrayList<>();
-//        String[]                    corpKeysSample      = {
+        List<Corporation>   corpKeysForTest     = new ArrayList<>();
+        String[]            corpKeysSample      = {
 //                 "00126380"
 //                ,"00421045"
 //                ,"00164645"
@@ -230,7 +244,8 @@ public class DartStockService implements StockService {
 //                ,"00266961"
 //                ,"00877059"
 //                ,"00126362"
-//                ,"00918444"
+                "00918444"
+                , "00258801"};
 //                ,"00164788"
 //                ,"00631518"
 //                ,"00149655"
@@ -250,13 +265,11 @@ public class DartStockService implements StockService {
 //                ,"00161125"
 //                ,"00155276"
 //                ,"00106368"};
-//
-//        for (String corpKeySample : corpKeysSample) {
-//            Map<String, String> corpKeysForTestMap = new HashMap<>();
-//            corpKeysForTestMap.put("corp_code", corpKeySample);
-//
-//            corpKeysForTest.add(corpKeysForTestMap);
-//        }
+
+        for (String corpKeySample : corpKeysSample) {
+            Corporation corpKeysForTestMap = new Corporation(corpKeySample, "");
+            corpKeysForTest.add(corpKeysForTestMap);
+        }
 
         try {
             /*
@@ -273,7 +286,7 @@ public class DartStockService implements StockService {
             corpInfos   = addCorpDetails(corpKeys, corpDetails);
             corpInfos   = getCorpOverviews(corpInfos);
 
-            corpInfos   = evalCorporation(corpInfos, corpDetails);
+//            corpInfos   = evalCorporation(corpInfos, corpDetails);
             saveCorporation(corpInfos);
 
             logger.info("update successfully processed");
@@ -384,6 +397,9 @@ public class DartStockService implements StockService {
         for (Corporation corpInfo : corpInfos) {
             List<CorpDetail> corpDetail = corpDetails.getOrDefault(corpInfo.getCorpCode(), null);
 
+//            if (corpDetail != null) {
+//                corpInfo.addCorpDetails(corpDetail);
+//            }
             if (corpDetail == null) {
                 corpInfos.remove(corpInfo);
             } else {
@@ -437,6 +453,9 @@ public class DartStockService implements StockService {
      *     ...
      * }
      *
+     * 2021.02.18
+     * 4년치의 재무제표 정보뿐만 아닌 10년치의 재무제표 정보를 가져옵니다.
+     *
      * @param corpInfos
      * @return 기업당 재무제표 리스트
      *
@@ -452,11 +471,8 @@ public class DartStockService implements StockService {
 
         int         targetYear  = LocalDate.now().getYear();
         String[]    reprtCodes  = {"11011", "11014", "11012", "11013"};
-        int         storeCount  = 0;
 
-        while(storeCount <= 4
-            && (LocalDate.now().getYear() - targetYear) < 5
-        ) {
+        while((LocalDate.now().getYear() - targetYear) < 10) {
             boolean         isStored    = false;
             for (String reprtCode : reprtCodes) {
                 int         joinIdx     = 0;
@@ -480,7 +496,6 @@ public class DartStockService implements StockService {
                     ) {
                         if ("000".equals(response.getBody().getStatus())) {
                             parseDetailDto(output, response.getBody());
-                            isStored = true;
                         }
 
                         joinIdx     += JOIN_LENGTH;
@@ -488,11 +503,6 @@ public class DartStockService implements StockService {
                     } else {
                         throw new IllegalAccessException();
                     }
-                }
-
-                if (isStored) {
-                    storeCount++;
-                    break;
                 }
             }
             targetYear--;
@@ -508,11 +518,11 @@ public class DartStockService implements StockService {
      *
      * 2021.02.02
      * 인덱스 범위만큼만 corpKeys 를 join 하는 것으로 변경
-     * 
+     *
      * @param corpInfos
      * @param fromIdx
      * @param toIdx
-     * 
+     *
      * @return 고유번호 문자열
      */
     private String joinCorpKeys(final List<Corporation> corpInfos, int fromIdx, int toIdx) {
@@ -520,15 +530,15 @@ public class DartStockService implements StockService {
             || fromIdx >= corpInfos.size()  || toIdx <= fromIdx
         ) {
             return "";
-        } else if (toIdx >= corpInfos.size()) {
-            toIdx = corpInfos.size() - 1;
+        } else if (toIdx > corpInfos.size()) {
+            toIdx = corpInfos.size();
         }
 
         StringBuilder stringBuilder = new StringBuilder();
 
         for (int idx = fromIdx ; idx < toIdx; idx++) {
             Corporation corpInfo = corpInfos.get(idx);
-            
+
             stringBuilder.append(corpInfo.getCorpCode());
             stringBuilder.append(',');
         }
@@ -651,6 +661,9 @@ public class DartStockService implements StockService {
      * 2021.02.03
      * input 형식이 List<Map<String, String>> 에서 List<Corporation> 으로 변경되었습니다.
      *
+     * 2021.02.18
+     * Y, K 만 받지 않습니다. 모든 기업을 저장합니다.
+     *
      * @param corpInfos
      * @return 기업정보 리스트
      *
@@ -690,8 +703,8 @@ public class DartStockService implements StockService {
              * corp_cls K   - 코스닥
              */
             if ("000".equals(response.getBody().getStatus())
-                && ('Y' == response.getBody().getCorpCls()
-                || 'K' == response.getBody().getCorpCls())
+//                && ('Y' == response.getBody().getCorpCls()
+//                || 'K' == response.getBody().getCorpCls())
             ) {
                 output.add(response.getBody());
             }
