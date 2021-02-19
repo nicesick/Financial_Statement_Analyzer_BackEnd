@@ -56,7 +56,7 @@ public class DartKeyCountService implements CountService, KeyService {
 //        logger.debug("isCountOver : countInDay = " + countInDay);
 //        logger.debug("isCountOver : countInMin = " + countInMin);
         int countInDay = getCount(localDate, localTime);
-        System.out.println("isCountOver : countInDay = " + countInDay);
+        logger.debug("isCountOver : countInDay = " + countInDay);
 
         return countInDay >= totMaxReqPerDay ? REQ_OVER_DAY : atomicInteger.get() >= MAX_REQ_PER_MIN ? REQ_OVER_MIN : REQ_OK;
     }
@@ -138,7 +138,7 @@ public class DartKeyCountService implements CountService, KeyService {
 
         this.addCount(localDate, localTime);
         String key = dartKeys.get(this.getCount(localDate, localTime) / MAX_REQ_PER_DAY);
-        System.out.println("key = " + key);
+        logger.debug("key = " + key);
 
         return key;
     }

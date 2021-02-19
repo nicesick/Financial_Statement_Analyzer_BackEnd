@@ -474,7 +474,8 @@ public class DartStockService implements StockService {
 
         while((LocalDate.now().getYear() - targetYear) < 10) {
             boolean         isStored    = false;
-            for (String reprtCode : reprtCodes) {
+            for (int idx = 0; idx < reprtCodes.length; idx++) {
+                String      reprtCode   = reprtCodes[idx];
                 int         joinIdx     = 0;
                 String      corpKeysStr = joinCorpKeys(corpInfos, joinIdx, joinIdx + JOIN_LENGTH);
 
@@ -495,7 +496,9 @@ public class DartStockService implements StockService {
                         || "013".equals(response.getBody().getStatus())
                     ) {
                         if ("000".equals(response.getBody().getStatus())) {
-                            parseDetailDto(output, response.getBody());
+                            if (!isSaved(output, response.getBody(), reprtCodes, idx)) {
+                                parseDetailDto(output, response.getBody());
+                            }
                         }
 
                         joinIdx     += JOIN_LENGTH;
@@ -509,6 +512,61 @@ public class DartStockService implements StockService {
         }
 
         return output;
+    }
+
+    /**
+     * isSaved
+     *
+     * 해당년도의 가장 최신 재무제표 정보만 저장하기 위해 현재 저장된 재무제표 정보를 체크합니다.
+     *
+     * 검사내용
+     *
+     * 1. corpCode  : 저장된 내용 중 해당 기업의 재무제표 정보가 저장되어 있는지 검사합니다.
+     * 2. bsnsYear  : 기업의 재무제표 정보 중 해당년도의 정보가 저장되어 있는지 검사합니다.
+     * 3. reprtCode : 해당년도 재무제표 정보 중 이미 최신의 정보가 저장되어 있는지 검사합니다.
+     *
+     * @param output
+     * @param dartApiResponseDto
+     * @param reprtCodes
+     * @param reprtIdx
+     *
+     * @return 저장여부(true - 저장됨, false - 저장필요)
+     */
+    private boolean isSaved(
+              final Map<String, List<CorpDetail>>   output
+            , final DartApiResponseDto              dartApiResponseDto
+            , final String[]                        reprtCodes
+            , final int                             reprtIdx
+    ) {
+        String   corpCode = dartApiResponseDto.getList().get(0).getCorp_code();
+        int      bsnsYear = dartApiResponseDto.getList().get(0).getBsns_year();
+
+        List<CorpDetail> corpDetails = output.getOrDefault(corpCode, null);
+
+        if (corpDetails == null) {
+            return false;
+        }
+
+        CorpDetail corpDetail = null;
+        for (CorpDetail subCorpDetail : corpDetails) {
+            if (bsnsYear == subCorpDetail.getBsnsYear()) {
+                corpDetail = subCorpDetail;
+                break;
+            }
+        }
+
+        if (corpDetail == null) {
+            return false;
+        }
+
+        for (int idx = 0; idx < reprtIdx; idx++) {
+            String reprtCode = reprtCodes[idx];
+            if (reprtCode.equals(corpDetail.getReprtCode())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -690,10 +748,7 @@ public class DartStockService implements StockService {
                     , Corporation.class
             );
 
-            System.out.println("response suceessed = "
-                    + countIdx
-                    + " / "
-                    + corpInfos.size());
+            logger.debug("response suceessed = " + countIdx + " / " + corpInfos.size());
 //            logger.debug("corpInfo = " + response.getBody().toString());
 
             /*
