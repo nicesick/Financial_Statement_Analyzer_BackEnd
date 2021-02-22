@@ -1,10 +1,14 @@
 package com.jihun.study.openDartApi;
 
+import com.jihun.study.openDartApi.dto.evalute.Evaluation;
 import com.jihun.study.openDartApi.dtoImpl.api.DartApiDetailDto;
 import com.jihun.study.openDartApi.dtoImpl.api.DartApiResponseDto;
+import com.jihun.study.openDartApi.dtoImpl.evaluate.OperatingIncomeGrowthRatioEvaluation;
 import com.jihun.study.openDartApi.entity.stock.CorpDetail;
 import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.service.api.ApiService;
+import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
+import com.jihun.study.openDartApi.service.evaluate.SortableService;
 import com.jihun.study.openDartApi.service.keyCount.KeyService;
 import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
 import com.jihun.study.openDartApi.utils.parser.DartXmlParser;
@@ -33,6 +37,8 @@ class OpenDartApiApplicationTests {
 	private ApiService	dartJsonService;
 	private KeyService 	dartKeyCountService;
 
+	private EvaluateService evaluateService;
+
 	@Autowired
 	public OpenDartApiApplicationTests(
 			  Environment 	environment
@@ -40,6 +46,7 @@ class OpenDartApiApplicationTests {
 			, @Qualifier("DartZipService")  ApiService dartZipService
 			, @Qualifier("DartTestService") ApiService dartService
 			, @Qualifier("DartJsonService") ApiService dartJsonService
+			, @Qualifier("OperatingIncomeGrowthRatioEvaluationService") EvaluateService evaluateService
 	) {
 		this.environment        	= environment;
 		this.dartKeyCountService	= dartKeyCountService;
@@ -47,6 +54,62 @@ class OpenDartApiApplicationTests {
 		this.dartZipService 		= dartZipService;
 		this.dartService        	= dartService;
 		this.dartJsonService 		= dartJsonService;
+		this.evaluateService		= evaluateService;
+	}
+
+	@Test
+	public void getOperatingIncomeRatioTest() {
+		List<Corporation> corporations = new ArrayList<>();
+
+		/**
+		 * corporation1 - corpEvals : null
+		 * corporation2 - corpEvals : null
+		 * corporation3 - corpEvals : null
+		 */
+		Corporation corporation1 = new Corporation();
+		Corporation corporation2 = new Corporation();
+		Corporation corporation3 = new Corporation();
+
+		corporation1.setCorpName("TEST1");
+		corporation2.setCorpName("TEST2");
+		corporation3.setCorpName("TEST3");
+
+		corporation1.setCorpEvals(new HashMap<>());
+		corporation2.setCorpEvals(new HashMap<>());
+		corporation3.setCorpEvals(new HashMap<>());
+
+		/**
+		 * corporation1 - corpEvals : null
+		 * corporation2 - corpEvals : new CorpDetail
+		 */
+		OperatingIncomeGrowthRatioEvaluation operatingIncomeGrowthRatioEvaluation1 = new OperatingIncomeGrowthRatioEvaluation();
+		operatingIncomeGrowthRatioEvaluation1.setEvalDone(true);
+
+		OperatingIncomeGrowthRatioEvaluation operatingIncomeGrowthRatioEvaluation2 = new OperatingIncomeGrowthRatioEvaluation();
+		operatingIncomeGrowthRatioEvaluation2.setEvalDone(true);
+
+		OperatingIncomeGrowthRatioEvaluation operatingIncomeGrowthRatioEvaluation3 = new OperatingIncomeGrowthRatioEvaluation();
+		operatingIncomeGrowthRatioEvaluation3.setEvalDone(true);
+		operatingIncomeGrowthRatioEvaluation3.setOperatingIncomeGrowthRatio(10.0f);
+
+		corporation1.getCorpEvals().put(evaluateService.getServiceName(), operatingIncomeGrowthRatioEvaluation3);
+		corporation2.getCorpEvals().put(evaluateService.getServiceName(), operatingIncomeGrowthRatioEvaluation1);
+		corporation3.getCorpEvals().put(evaluateService.getServiceName(), operatingIncomeGrowthRatioEvaluation2);
+
+		corporations.add(corporation1);
+		corporations.add(corporation2);
+		corporations.add(corporation3);
+
+		if (evaluateService instanceof SortableService) {
+			Comparator comparator = ((SortableService) evaluateService).getComparator();
+
+			Collections.sort(corporations, comparator);
+
+			for (Corporation corporation : corporations) {
+				System.out.println("corporation.getCorpName() 		= " + corporation.getCorpName());
+				System.out.println("corporation.getCorpEvals() 		= " + corporation.getCorpEvals());
+			}
+		}
 	}
 
 	@Test

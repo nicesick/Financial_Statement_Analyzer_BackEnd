@@ -272,6 +272,7 @@ public class DartStockService implements StockService {
         }
 
         try {
+            logger.info("update started");
             /*
              * 2021.02.03
              *
@@ -392,6 +393,8 @@ public class DartStockService implements StockService {
      * @return Corporation 리스트
      */
     private List<Corporation> addCorpDetails(final List<Corporation> oldCorpInfos, final Map<String, List<CorpDetail>> corpDetails) {
+        logger.info("update : addCorpDetails started");
+
         List<Corporation> corpInfos = new CopyOnWriteArrayList<>(oldCorpInfos);
 
         for (Corporation corpInfo : corpInfos) {
@@ -407,6 +410,7 @@ public class DartStockService implements StockService {
             }
         }
 
+        logger.info("update : addCorpDetails finished");
         return corpInfos;
     }
 
@@ -454,7 +458,7 @@ public class DartStockService implements StockService {
      * }
      *
      * 2021.02.18
-     * 4년치의 재무제표 정보뿐만 아닌 10년치의 재무제표 정보를 가져옵니다.
+     * 4년치의 재무제표 정보뿐만 아닌 5년치의 재무제표 정보를 가져옵니다.
      *
      * @param corpInfos
      * @return 기업당 재무제표 리스트
@@ -466,14 +470,19 @@ public class DartStockService implements StockService {
      * @throws InvocationTargetException
      */
     private Map<String, List<CorpDetail>> getCorpDetails(final List<Corporation> corpInfos) throws LimitExceededException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        logger.info("update : getCorpDetails started");
+
         final int                       JOIN_LENGTH = 850;
         Map<String, List<CorpDetail>>   output      = new HashMap<>();
 
         int         targetYear  = LocalDate.now().getYear();
         String[]    reprtCodes  = {"11011", "11014", "11012", "11013"};
 
-        while((LocalDate.now().getYear() - targetYear) < 10) {
+        while((LocalDate.now().getYear() - targetYear) < 5) {
+            logger.info("update : getCorpDetails targetYear : " + targetYear);
+
             boolean         isStored    = false;
+
             for (int idx = 0; idx < reprtCodes.length; idx++) {
                 String      reprtCode   = reprtCodes[idx];
                 int         joinIdx     = 0;
@@ -490,7 +499,8 @@ public class DartStockService implements StockService {
                             , DartApiResponseDto.class
                     );
 
-                    logger.debug("response : status     = " + response.getBody().getStatus());
+                    logger.info("response : status       = " + response.getBody().getStatus());
+                    logger.info("response : message      = " + response.getBody().getMessage());
 
                     if ("000".equals(response.getBody().getStatus())
                         || "013".equals(response.getBody().getStatus())
@@ -511,6 +521,7 @@ public class DartStockService implements StockService {
             targetYear--;
         }
 
+        logger.info("update : getCorpDetails finished");
         return output;
     }
 
@@ -729,6 +740,8 @@ public class DartStockService implements StockService {
      * @throws InterruptedException
      */
     private List<Corporation> getCorpOverviews(final List<Corporation> corpInfos) throws LimitExceededException, InterruptedException {
+        logger.info("update : getCorpOverviews started");
+
         List<Corporation> output = new ArrayList<>();
 
         int countIdx = 1;
@@ -748,7 +761,7 @@ public class DartStockService implements StockService {
                     , Corporation.class
             );
 
-            logger.debug("response suceessed = " + countIdx + " / " + corpInfos.size());
+            logger.info("response suceessed = " + countIdx + " / " + corpInfos.size());
 //            logger.debug("corpInfo = " + response.getBody().toString());
 
             /*
@@ -761,7 +774,10 @@ public class DartStockService implements StockService {
 //                && ('Y' == response.getBody().getCorpCls()
 //                || 'K' == response.getBody().getCorpCls())
             ) {
-                output.add(response.getBody());
+                Corporation corporation = response.getBody();
+                corporation.setCorpDetails(corpInfo.getCorpDetails());
+
+                output.add(corporation);
             }
             countIdx++;
         }
@@ -771,6 +787,7 @@ public class DartStockService implements StockService {
             throw new NegativeArraySizeException();
         }
 
+        logger.info("update : getCorpOverviews finished");
         return output;
     }
 
@@ -815,6 +832,7 @@ public class DartStockService implements StockService {
      * @throws JDOMException
      */
     private List<Corporation> getCorpKeys() throws LimitExceededException, InterruptedException, IOException, JDOMException {
+        logger.info("update : getCorpKeys started");
         List<Corporation> output = new ArrayList<>();
 
         ResponseEntity<byte[]> response = dartZipService.get(
@@ -837,6 +855,7 @@ public class DartStockService implements StockService {
             output.add(new Corporation(corpKey.get("corp_code"), corpKey.get("corp_name")));
         }
 
+        logger.info("update : getCorpKeys finished");
         return output;
     }
 }

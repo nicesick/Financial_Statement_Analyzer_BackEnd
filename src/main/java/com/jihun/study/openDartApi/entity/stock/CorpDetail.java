@@ -175,4 +175,20 @@ public class CorpDetail implements Serializable {
     public void setNetIncome(String netIncome) {
         this.netIncome = netIncome;
     }
+
+    @Override
+    public String toString() {
+        return "CorpDetail{" +
+                "corpDetailPK=" + corpDetailPK +
+                ", thstrmDt='" + thstrmDt + '\'' +
+                ", totAssets='" + totAssets + '\'' +
+                ", totLiability='" + totLiability + '\'' +
+                ", totStockholdersEquity='" + totStockholdersEquity + '\'' +
+                ", stockholdersEquity='" + stockholdersEquity + '\'' +
+                ", revenue='" + revenue + '\'' +
+                ", operatingIncome='" + operatingIncome + '\'' +
+                ", incomeBeforeTax='" + incomeBeforeTax + '\'' +
+                ", netIncome='" + netIncome + '\'' +
+                '}';
+    }
 }

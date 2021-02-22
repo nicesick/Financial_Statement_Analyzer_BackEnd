@@ -51,8 +51,8 @@ public class DartJsonService implements ApiService<DartApiDto> {
         ) {
             return response;
         } else {
-            logger.debug("response.getBody().getStatus() = " + response.getBody().getStatus());
-            logger.debug("response.getBody().getMessage() = " + response.getBody().getMessage());
+            logger.error("response.getBody().getStatus()    = " + response.getBody().getStatus());
+            logger.error("response.getBody().getMessage()   = " + response.getBody().getMessage());
 
             throw new IllegalStateException();
         }

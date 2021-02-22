@@ -47,4 +47,13 @@ public class CorpUpdate implements Serializable, DartUpdate {
     public void setProgress(String progress) {
         this.progress = progress;
     }
+
+    @Override
+    public String toString() {
+        return "CorpUpdate{" +
+                "id=" + id +
+                ", progress='" + progress + '\'' +
+                ", updateDate=" + updateDate +
+                '}';
+    }
 }

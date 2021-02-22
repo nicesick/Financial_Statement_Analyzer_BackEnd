@@ -41,13 +41,14 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
             /*
              * 평가여부 확인
              */
-            if (!((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isEvalDone()
-                && !((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isEvalDone()
-            ) {
+            boolean comp1EvalDone = ((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isEvalDone();
+            boolean comp2EvalDone = ((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isEvalDone();
+
+            if (!comp1EvalDone && !comp2EvalDone) {
                 return 0;
-            } else if (!((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isEvalDone()) {
+            } else if (!comp1EvalDone) {
                 return 1;
-            } else if (!((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isEvalDone()) {
+            } else if (!comp2EvalDone) {
                 return -1;
             }
 
@@ -58,24 +59,80 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
              * 2. 영업이익      양수유지여부
              * 3. 영업이익증가율 대소구분
              */
-            if (((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isKeepOperatingIncomeGrowthRatioPositive()
-                && ((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isKeepOperatingIncomeGrowthRatioPositive()
+            boolean comp1IncomeGrowthRatioPositive  = ((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isKeepOperatingIncomeGrowthRatioPositive();
+            boolean comp1IncomePositive             = ((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isKeepOperatingIncomePositive();
+            boolean comp2IncomeGrowthRatioPositive  = ((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isKeepOperatingIncomeGrowthRatioPositive();
+            boolean comp2IncomePositive             = ((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isKeepOperatingIncomePositive();
+
+            float   comp1IncomeGrowthRatio = ((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).getOperatingIncomeGrowthRatio();
+            float   comp2IncomeGrowthRatio = ((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).getOperatingIncomeGrowthRatio();
+
+            /**
+             * TODO
+             * 좀 더 나은 조건식으로 변경
+             */
+            if (comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                && comp2IncomeGrowthRatioPositive && comp2IncomePositive
             ) {
-                if (((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).isKeepOperatingIncomePositive()
-                    && ((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isKeepOperatingIncomePositive()
-                ) {
-                    return (int)
-                            (((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).getOperatingIncomeGrowthRatio()
-                            - ((OperatingIncomeGrowthRatioEvaluation) comp1Evaluation).getOperatingIncomeGrowthRatio());
-                } else if (((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isKeepOperatingIncomePositive()) {
-                    return 1;
-                } else {
-                    return -1;
-                }
-            } else if (((OperatingIncomeGrowthRatioEvaluation) comp2Evaluation).isKeepOperatingIncomeGrowthRatioPositive()) {
+                return (int)(comp2IncomeGrowthRatio - comp1IncomeGrowthRatio);
+            } else if (!comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
                 return 1;
-            } else {
+            } else if (comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
+                return 1;
+            } else if (comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
                 return -1;
+            } else if (comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return -1;
+            } else if (!comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
+                return 1;
+            } else if (comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return -1;
+            } else if (!comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
+                return (int)(comp2IncomeGrowthRatio - comp1IncomeGrowthRatio);
+            } else if (comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return (int)(comp2IncomeGrowthRatio - comp1IncomeGrowthRatio);
+            } else if (!comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return (int)(comp2IncomeGrowthRatio - comp1IncomeGrowthRatio);
+            } else if (comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
+                return (int)(comp2IncomeGrowthRatio - comp1IncomeGrowthRatio);
+            } else if (!comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && comp2IncomePositive
+            ) {
+                return 1;
+            } else if (!comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return 1;
+            } else if (comp1IncomeGrowthRatioPositive && !comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return -1;
+            } else if (!comp1IncomeGrowthRatioPositive && comp1IncomePositive
+                    && !comp2IncomeGrowthRatioPositive && !comp2IncomePositive
+            ) {
+                return -1;
+            } else {
+                return (int)(comp2IncomeGrowthRatio - comp1IncomeGrowthRatio);
             }
         }
     };
@@ -116,6 +173,14 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         }
     }
 
+    /**
+     * evaluateKeepOperatingIncomeGrowthRatioPositive
+     *
+     * 영업이익 성장률이 계속 상승하는지 평가합니다.
+     *
+     * @param operatingIncomes
+     * @return
+     */
     private boolean evaluateKeepOperatingIncomeGrowthRatioPositive(List<String> operatingIncomes) {
         if (operatingIncomes.size() < 2) {
             throw new IllegalArgumentException();
@@ -141,6 +206,14 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         }
     }
 
+    /**
+     * evaluateKeepOperatingIncomePositive
+     *
+     * 영업이익이 계속 상승하는지 평가합니다.
+     *
+     * @param operatingIncomes
+     * @return
+     */
     private boolean evaluateKeepOperatingIncomePositive(List<String> operatingIncomes) {
         if (operatingIncomes.size() < 2) {
             throw new IllegalArgumentException();
@@ -164,6 +237,14 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         }
     }
 
+    /**
+     * evaluateOperatingIncomeRatio
+     *
+     * 영업이익 성장률을 평가합니다.
+     *
+     * @param operatingIncomes
+     * @return
+     */
     private float evaluateOperatingIncomeRatio(List<String> operatingIncomes) {
         if (operatingIncomes.size() < 2) {
             throw new IllegalArgumentException();
