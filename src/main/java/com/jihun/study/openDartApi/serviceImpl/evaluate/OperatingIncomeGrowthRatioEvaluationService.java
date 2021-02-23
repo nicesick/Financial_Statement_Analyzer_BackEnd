@@ -145,13 +145,15 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
 
             List<String> operatingIncomes = new ArrayList<>();
             for (CorpDetail corpDetail : ((Corporation) corpInfo).getCorpDetails()) {
-                String operatingIncome = corpDetail.getOperatingIncome();
+                if ("11011".equals(corpDetail.getReprtCode())) {
+                    String operatingIncome = corpDetail.getOperatingIncome();
 
-                if (operatingIncome == null) {
-                    operatingIncomeGrowthRatioEvaluation.setEvalDone(false);
-                    break;
-                } else {
-                    operatingIncomes.add(operatingIncome);
+                    if (operatingIncome == null) {
+                        operatingIncomeGrowthRatioEvaluation.setEvalDone(false);
+                        break;
+                    } else {
+                        operatingIncomes.add(operatingIncome);
+                    }
                 }
             }
 
@@ -195,9 +197,12 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
                 long parsedNextOperatingIncome = Long.parseLong(operatingIncomes.get(idx).replaceAll("\\,", ""));
 
                 if (parsedNextOperatingIncome < parsedCurOperatingIncome) {
+                    System.out.println("Here");
                     isKeepOperatingIncomeGrowthRatioPositive = false;
                     break;
                 }
+
+                parsedCurOperatingIncome = parsedNextOperatingIncome;
             }
 
             return isKeepOperatingIncomeGrowthRatioPositive;
@@ -258,11 +263,10 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
             for (int idx = 1; idx < operatingIncomes.size(); idx++) {
                 long nextOperatingIncome = Long.parseLong(operatingIncomes.get(idx).replaceAll("\\,", ""));
 
-                output              += ((float)(nextOperatingIncome - curOperatingIncome)) / nextOperatingIncome * 100;
                 logger.debug("curOperatingIncome  = " + curOperatingIncome);
                 logger.debug("nextOperatingIncome = " + nextOperatingIncome);
-                logger.debug("output              = " + output);
 
+                output              += ((float)(nextOperatingIncome - curOperatingIncome)) / nextOperatingIncome * 100;
                 curOperatingIncome  = nextOperatingIncome;
             }
 
