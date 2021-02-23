@@ -197,7 +197,6 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
                 long parsedNextOperatingIncome = Long.parseLong(operatingIncomes.get(idx).replaceAll("\\,", ""));
 
                 if (parsedNextOperatingIncome < parsedCurOperatingIncome) {
-                    System.out.println("Here");
                     isKeepOperatingIncomeGrowthRatioPositive = false;
                     break;
                 }
