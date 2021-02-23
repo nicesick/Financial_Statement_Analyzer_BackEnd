@@ -291,7 +291,8 @@ class OpenDartApiApplicationTests {
 							dartApiDetailDto.getCorp_code()
 							, dartApiDetailDto.getBsns_year()
 							, dartApiDetailDto.getReprt_code()
-							, dartApiDetailDto.getThstrm_dt());
+							, dartApiDetailDto.getThstrm_dt()
+							, dartApiDetailDto.getRcept_no());
 
 					corpDetails.add(targetCorpDetail);
 				}

@@ -8,6 +8,7 @@ import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
 import com.jihun.study.openDartApi.service.evaluate.SortableService;
 import com.jihun.study.openDartApi.service.stock.StockService;
 import com.jihun.study.openDartApi.serviceImpl.evaluate.IssueEvaluateService;
+import com.jihun.study.openDartApi.serviceImpl.stock.DartStockService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -75,9 +76,23 @@ public class StockController {
         return output;
     }
 
+    @GetMapping("/search/reportUri")
+    public ResponseEntity<String> getReportUri() {
+        ResponseEntity<String> output = null;
+
+        if (stockService instanceof DartStockService) {
+            output = ((DartStockService) stockService).getReportUri();
+        }
+        return output;
+    }
+
     @GetMapping("/search/corpCls")
     public ResponseEntity<List<String>> getCorpClses() {
-        ResponseEntity<List<String>> output = stockService.getCorpClses();
+        ResponseEntity<List<String>> output = null;
+
+        if (stockService instanceof DartStockService) {
+            output = ((DartStockService) stockService).getCorpClses();
+        }
         return output;
     }
 

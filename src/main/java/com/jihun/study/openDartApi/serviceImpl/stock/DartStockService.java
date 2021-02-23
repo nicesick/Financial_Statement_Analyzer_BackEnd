@@ -10,10 +10,8 @@ import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.repository.stock.CorpUpdateRepository;
 import com.jihun.study.openDartApi.repository.stock.CorporationRepository;
 import com.jihun.study.openDartApi.service.api.ApiService;
-import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
 import com.jihun.study.openDartApi.service.keyCount.KeyService;
 import com.jihun.study.openDartApi.service.stock.StockService;
-import com.jihun.study.openDartApi.utils.evaluator.CorpEvaluator;
 import com.jihun.study.openDartApi.utils.parser.DartXmlParser;
 import com.jihun.study.openDartApi.utils.stream.ZipStream;
 import org.jdom2.JDOMException;
@@ -55,6 +53,8 @@ public class DartStockService implements StockService {
     private final String CORP_INFO_URI;
     private final String CORP_DETAIL_URI;
 
+    private final String CORP_REPORT_URI;
+
     private final Map<String, String> DETAIL_MAPPER = new HashMap<String, String>() {{
         put("자산총계" , "TotAssets");
         put("부채총계" , "TotLiability");
@@ -88,6 +88,16 @@ public class DartStockService implements StockService {
         this.CORP_CODE_URI      = environment.getProperty("dart.corpCode.uri");
         this.CORP_INFO_URI      = environment.getProperty("dart.corpInfo.uri");
         this.CORP_DETAIL_URI    = environment.getProperty("dart.corpDetail.uri");
+        this.CORP_REPORT_URI    = environment.getProperty("dart.corpReport.uri");
+    }
+
+    public ResponseEntity<List<String>> getCorpClses() {
+        List<String> corpClses = corporationRepository.findDistinctCorpCls();
+        return new ResponseEntity(corpClses, HttpStatus.OK);
+    }
+
+    public ResponseEntity<String> getReportUri() {
+        return new ResponseEntity<>(this.CORP_REPORT_URI, HttpStatus.OK);
     }
 
     @Override
@@ -131,12 +141,6 @@ public class DartStockService implements StockService {
         } else {
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
-    }
-
-    @Override
-    public ResponseEntity<List<String>> getCorpClses() {
-        List<String> corpClses = corporationRepository.findDistinctCorpCls();
-        return new ResponseEntity(corpClses, HttpStatus.OK);
     }
 
     @Override
@@ -666,7 +670,8 @@ public class DartStockService implements StockService {
                             dartApiDetailDto.getCorp_code()
                             , dartApiDetailDto.getBsns_year()
                             , dartApiDetailDto.getReprt_code()
-                            , dartApiDetailDto.getThstrm_dt());
+                            , dartApiDetailDto.getThstrm_dt()
+                            , dartApiDetailDto.getRcept_no());
 
                     corpDetails.add(targetCorpDetail);
                 }

@@ -22,6 +22,8 @@ public class CorpDetail implements Serializable {
     private CorpDetailPK    corpDetailPK;
     @JsonProperty("thstrm_dt")
     private String          thstrmDt;
+    @JsonProperty("rcept_no")
+    private String          rceptNo;
 
     @JsonProperty("tot_assets")
     private String          totAssets;
@@ -48,9 +50,10 @@ public class CorpDetail implements Serializable {
     public CorpDetail() {
     }
 
-    public CorpDetail(String corpCode, int bsnsYear, String reprtCode, String thstrmDt) {
+    public CorpDetail(String corpCode, int bsnsYear, String reprtCode, String thstrmDt, String rceptNo) {
         corpDetailPK    = new CorpDetailPK(corpCode, bsnsYear, reprtCode);
         this.thstrmDt   = thstrmDt;
+        this.rceptNo    = rceptNo;
     }
 
     @Override
@@ -110,6 +113,14 @@ public class CorpDetail implements Serializable {
 
     public void setThstrmDt(String thstrmDt) {
         this.thstrmDt = thstrmDt;
+    }
+
+    public String getRceptNo() {
+        return rceptNo;
+    }
+
+    public void setRceptNo(String rceptNo) {
+        this.rceptNo = rceptNo;
     }
 
     public String getTotAssets() {
@@ -181,6 +192,7 @@ public class CorpDetail implements Serializable {
         return "CorpDetail{" +
                 "corpDetailPK=" + corpDetailPK +
                 ", thstrmDt='" + thstrmDt + '\'' +
+                ", rceptNo='" + rceptNo + '\'' +
                 ", totAssets='" + totAssets + '\'' +
                 ", totLiability='" + totLiability + '\'' +
                 ", totStockholdersEquity='" + totStockholdersEquity + '\'' +
