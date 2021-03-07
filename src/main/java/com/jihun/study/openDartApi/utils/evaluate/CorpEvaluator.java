@@ -1,4 +1,4 @@
-package com.jihun.study.openDartApi.utils.evaluator;
+package com.jihun.study.openDartApi.utils.evaluate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

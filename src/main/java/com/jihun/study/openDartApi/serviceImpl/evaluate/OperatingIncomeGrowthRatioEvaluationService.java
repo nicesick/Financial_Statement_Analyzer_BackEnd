@@ -2,11 +2,13 @@ package com.jihun.study.openDartApi.serviceImpl.evaluate;
 
 import com.jihun.study.openDartApi.dto.evalute.Evaluation;
 import com.jihun.study.openDartApi.dto.stock.DartDto;
+import com.jihun.study.openDartApi.dtoImpl.evaluate.IssueEvaluation;
 import com.jihun.study.openDartApi.dtoImpl.evaluate.OperatingIncomeGrowthRatioEvaluation;
 import com.jihun.study.openDartApi.entity.stock.CorpDetail;
 import com.jihun.study.openDartApi.entity.stock.Corporation;
 import com.jihun.study.openDartApi.service.evaluate.EvaluateService;
 import com.jihun.study.openDartApi.service.evaluate.SortableService;
+import com.jihun.study.openDartApi.utils.evaluate.EvaluateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -137,12 +139,66 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         }
     };
 
+    /**
+     * evaluate
+     *
+     * Open Dart API 에서 받아온 데이터를 기반으로 기업의 영업이익을 분석합니다.
+     * 만약 평가할 수 없다면, Corporation 의 is_eval_done 변수가 false 로 변경됩니다.
+     *
+     * 2021.03.07
+     * 연간보고서가 아닌 분기, 반기보고서의 경우 매출액, 영업이익, 법인세차감전순이익 값을 각각 연간 예상 값으로 조정합니다
+     * 1분기보고서 : 11013, 반기보고서 : 11012, 3분기보고서 : 11014, 사업보고서 : 11011
+     *
+     * 11013 : 300% 증가
+     * 11012 : 200% 증가
+     * 11014 : 75% 증가
+     *
+     * @param corpInfo
+     */
     @Override
     public void evaluate(DartDto corpInfo) {
         if (corpInfo instanceof Corporation) {
+            List<CorpDetail>    corpDetails     = ((Corporation) corpInfo).getCorpDetails();
             OperatingIncomeGrowthRatioEvaluation operatingIncomeGrowthRatioEvaluation
                     = new OperatingIncomeGrowthRatioEvaluation(((Corporation) corpInfo).getCorpCode());
 
+            try {
+                if (corpDetails == null || corpDetails.size() == 0) {
+                    operatingIncomeGrowthRatioEvaluation.setEvalDone(false);
+                } else {
+                    List<Long> operatingIncomes = new ArrayList<>();
+
+                    for (int index = 0; index < corpDetails.size(); index++) {
+                        long operatingIncome = EvaluateUtils.parseLong(corpDetails.get(index).getOperatingIncome());
+
+                        if ("11013".equals(corpDetails.get(index).getReprtCode())) {
+                            operatingIncome *= 3;
+                        } else if ("11012".equals(corpDetails.get(index).getReprtCode())) {
+                            operatingIncome *= 2;
+                        } else if ("11014".equals(corpDetails.get(index).getReprtCode())) {
+                            operatingIncome *= 1.25;
+                        }
+                        operatingIncomes.add(operatingIncome);
+                    }
+
+                    operatingIncomeGrowthRatioEvaluation.setOperatingIncomeGrowthRatio(evaluateOperatingIncomeRatio(operatingIncomes));
+                    operatingIncomeGrowthRatioEvaluation.setKeepOperatingIncomeGrowthRatioPositive(evaluateKeepOperatingIncomeGrowthRatioPositive(operatingIncomes));
+                    operatingIncomeGrowthRatioEvaluation.setKeepOperatingIncomePositive(evaluateKeepOperatingIncomePositive(operatingIncomes));
+                }
+            } catch (Exception e) {
+                operatingIncomeGrowthRatioEvaluation.setEvalDone(false);
+            } finally {
+                ((Corporation) corpInfo).addCorpEval(EVALUATE_SERVICE_NAME, operatingIncomeGrowthRatioEvaluation);
+            }
+
+            /*
+             * 2021-03-07
+             *
+             * @Deprecated
+             *
+             * EvaluateUtils 를 추가하여 String 값을 Long 값으로 parse 하는 기능을 추가하였습니다.
+             * 아래의 코드는 더이상 사용되지 않습니다.
+             *
             List<String> operatingIncomes = new ArrayList<>();
             for (CorpDetail corpDetail : ((Corporation) corpInfo).getCorpDetails()) {
                 if ("11011".equals(corpDetail.getReprtCode())) {
@@ -172,6 +228,7 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
             } else {
                 ((Corporation) corpInfo).addCorpEval(EVALUATE_SERVICE_NAME, operatingIncomeGrowthRatioEvaluation);
             }
+             */
         }
     }
 
@@ -180,10 +237,13 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
      *
      * 영업이익 성장률이 계속 상승하는지 평가합니다.
      *
+     * 2021-03-07
+     * String[] 형식으로 받지 않고, List<Long> 형식으로 받게 변경되었습니다.
+     *
      * @param operatingIncomes
      * @return
      */
-    private boolean evaluateKeepOperatingIncomeGrowthRatioPositive(List<String> operatingIncomes) {
+    private boolean evaluateKeepOperatingIncomeGrowthRatioPositive(List<Long> operatingIncomes) {
         if (operatingIncomes.size() < 2) {
             throw new IllegalArgumentException();
         }
@@ -191,10 +251,10 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         boolean isKeepOperatingIncomeGrowthRatioPositive = true;
 
         try {
-            long parsedCurOperatingIncome = Long.parseLong(operatingIncomes.get(0).replaceAll("\\,", ""));
+            long parsedCurOperatingIncome = operatingIncomes.get(0);
 
             for (int idx = 1; idx < operatingIncomes.size(); idx++) {
-                long parsedNextOperatingIncome = Long.parseLong(operatingIncomes.get(idx).replaceAll("\\,", ""));
+                long parsedNextOperatingIncome = operatingIncomes.get(idx);
 
                 if (parsedNextOperatingIncome < parsedCurOperatingIncome) {
                     isKeepOperatingIncomeGrowthRatioPositive = false;
@@ -215,10 +275,13 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
      *
      * 영업이익이 계속 상승하는지 평가합니다.
      *
+     * 2021-03-07
+     * String[] 형식으로 받지 않고, List<Long> 형식으로 받게 변경되었습니다.
+     *
      * @param operatingIncomes
      * @return
      */
-    private boolean evaluateKeepOperatingIncomePositive(List<String> operatingIncomes) {
+    private boolean evaluateKeepOperatingIncomePositive(List<Long> operatingIncomes) {
         if (operatingIncomes.size() < 2) {
             throw new IllegalArgumentException();
         }
@@ -226,8 +289,8 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         boolean isKeepOperatingIncomePositive = true;
 
         try {
-            for (String operatingIncome : operatingIncomes) {
-                long parsedOperatingIncome = Long.parseLong(operatingIncome.replaceAll("\\,", ""));
+            for (long operatingIncome : operatingIncomes) {
+                long parsedOperatingIncome = operatingIncome;
 
                 if (parsedOperatingIncome < 0) {
                     isKeepOperatingIncomePositive = false;
@@ -246,10 +309,13 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
      *
      * 영업이익 성장률을 평가합니다.
      *
+     * 2021-03-07
+     * String[] 형식으로 받지 않고, List<Long> 형식으로 받게 변경되었습니다.
+     *
      * @param operatingIncomes
      * @return
      */
-    private float evaluateOperatingIncomeRatio(List<String> operatingIncomes) {
+    private float evaluateOperatingIncomeRatio(List<Long> operatingIncomes) {
         if (operatingIncomes.size() < 2) {
             throw new IllegalArgumentException();
         }
@@ -257,10 +323,10 @@ public class OperatingIncomeGrowthRatioEvaluationService implements EvaluateServ
         float output = 0;
 
         try {
-            long curOperatingIncome = Long.parseLong(operatingIncomes.get(0).replaceAll("\\,", ""));
+            long curOperatingIncome = operatingIncomes.get(0);
 
             for (int idx = 1; idx < operatingIncomes.size(); idx++) {
-                long nextOperatingIncome = Long.parseLong(operatingIncomes.get(idx).replaceAll("\\,", ""));
+                long nextOperatingIncome = operatingIncomes.get(idx);
 
                 logger.debug("curOperatingIncome  = " + curOperatingIncome);
                 logger.debug("nextOperatingIncome = " + nextOperatingIncome);

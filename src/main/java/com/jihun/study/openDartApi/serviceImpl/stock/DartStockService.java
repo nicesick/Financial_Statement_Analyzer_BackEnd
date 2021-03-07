@@ -698,7 +698,10 @@ public class DartStockService implements StockService {
 
                 Object methodGetResult = targetGetMethod.invoke(targetCorpDetail);
                 if (methodGetResult == null || "0".equals(methodGetResult.toString())) {
-                    targetSetMethod.invoke(targetCorpDetail, dartApiDetailDto.getThstrm_amount());
+                    String amount = dartApiDetailDto.getThstrm_add_amount() == null ?
+                            dartApiDetailDto.getThstrm_amount() : dartApiDetailDto.getThstrm_add_amount();
+
+                    targetSetMethod.invoke(targetCorpDetail, amount);
                 }
             }
         }
